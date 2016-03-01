@@ -1,8 +1,7 @@
-# ConsoleiT Frontend
-ConsoleiT 的前端代码
+# ConsoleiT Backend
+ConsoleiT 的后端代码
 
-[![依赖状态](https://david-dm.org/CircuitCoder/ConsoleiT-Frontend.svg)](https://david-dm.org/CircuitCoder/ConsoleiT-Frontend)
-[![开发依赖状态](https://david-dm.org/CircuitCoder/ConsoleiT-Frontend/dev-status.svg)](https://david-dm.org/CircuitCoder/ConsoleiT-Frontend#info=devDependencies)
+[![依赖状态](https://david-dm.org/CircuitCoder/ConsoleiT-Backend.svg)](https://david-dm.org/CircuitCoder/ConsoleiT-Backend)
 
 ## 运行
 首先请修改 `config.yml` 文件，改变服务器端口等设置
