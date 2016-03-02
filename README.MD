@@ -4,7 +4,7 @@ ConsoleiT 的后端代码
 [![依赖状态](https://david-dm.org/CircuitCoder/ConsoleiT-Backend.svg)](https://david-dm.org/CircuitCoder/ConsoleiT-Backend)
 
 ## 运行
-首先请修改 `config.yml` 文件，改变服务器端口等设置
+首先请将项目根目录下 `config.example.yml` 复制为 `config.yml`，并改变其中配置
 
 随后，执行如下指令
 
