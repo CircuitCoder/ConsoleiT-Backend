@@ -7,6 +7,7 @@ var mongoose = require('mongoose');
 var User = mongoose.model('User');
 
 var passport = require('passport');
+var mailer = require('../mailer');
 
 router.post('/login', function(req, res, next) {
   if(!req.body) res.sendStatus(400);
@@ -36,9 +37,13 @@ router.post('/register', function(req, res, next) {
         user.save(function(err, doc) {
           if(err) next(err);
           else {
-            //TODO: Send email
-            console.log(passwd);
-            return res.sendStatus(200);
+            mailer('new_user', doc.email, {
+              realname: doc.realname,
+              passwd: passwd
+            }, function(err, info) {
+              if(err) return next(err);
+              else return res.sendStatus(200);
+            });
           }
         });
       }

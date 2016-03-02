@@ -2,7 +2,21 @@ webserver:
   port: 3000
 
 db:
-  uri: 'mongodb://localhost/consoleit'
+  uri: "mongodb://localhost/consoleit"
 
 auth:
   secret: 'consoleit' # Secret for SHA-256
+
+mailer:
+  transport:
+    host: "Your SMTP provider here"
+    port: 25 
+    auth: 
+      user: "Your mail address here"
+      pass: "Your password here"
+  defaults:
+    from: "Your title"
+  tmpls:
+    new_user:
+      title: "ConsoleiT 注册邮件"
+      file: "new_user.html"
