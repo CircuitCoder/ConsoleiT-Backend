@@ -2,3 +2,5 @@ node_modules
 npm-debug.log
 
 *.sw[a-p]
+
+/config.yml
