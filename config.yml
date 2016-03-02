@@ -1,1 +1,8 @@
-port: 3000
+webserver:
+  port: 3000
+
+db:
+  uri: 'mongodb://localhost/consoleit'
+
+auth:
+  secret: 'consoleit' # Secret for SHA-256
