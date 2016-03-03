@@ -11,9 +11,7 @@ var passport = require('passport');
 passport.use(strategy);
 
 var app = express();
-app.use(bodyParser.urlencoded({
-  extended: false
-}));
+app.use(bodyParser.json());
 app.use(routes);
 app.use(function(err, req, res, next) {
   console.error(err.stack);
