@@ -16,7 +16,12 @@ router.post('/login', function(req, res, next) {
       if(err) return next(err);
       else if(!user) return res.send({error: 'CredentialRejected'});
       else {
-        res.sendStatus(200);
+        res.send({
+          user: {
+            email: user.email,
+            realname: user.realname
+          }
+        });
       }
     })(req, res, next);
   }
