@@ -12,12 +12,10 @@ var passport = require('passport');
 
 passport.use(strategy);
 passport.serializeUser(function(user, done) {
-  console.log("hahaha");
   done(null, user);
 });
 
 passport.deserializeUser(function(user, done) {
-  console.log("done");
   done(null, user);
 });
 
