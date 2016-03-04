@@ -21,6 +21,7 @@
     "body-parser": "^1.15.0",
     "cors": "^2.7.1",
     "express": "^4.13.4",
+    "express-session": "^1.13.0",
     "js-yaml": "^3.5.3",
     "mongoose": "^4.4.5",
     "mustache": "^2.2.1",

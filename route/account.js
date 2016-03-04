@@ -10,16 +10,18 @@ var passport = require('passport');
 var mailer = require('../mailer');
 
 router.post('/login', function(req, res, next) {
-  if(!req.body) res.sendStatus(400);
+  if(req.user) return res.send({ error: "InvalidCondition" });
+  else if(!req.body) return res.sendStatus(400);
   else {
     passport.authenticate('local', function(err, user) {
       if(err) return next(err);
       else if(!user) return res.send({error: 'CredentialRejected'});
       else {
-        res.send({
-          user: {
-            email: user.email,
-            realname: user.realname
+        req.login(user, function(err) {
+          if(err) {
+            return next(err);
+          } else {
+            return res.send({ user });
           }
         });
       }
@@ -55,6 +57,24 @@ router.post('/register', function(req, res, next) {
         });
       }
     });
+  }
+});
+
+router.get('/logout', function(req, res, next) {
+  if(!req.user) return res.send({ error: "InvalidCondition" });
+  else {
+    req.logout();
+    res.send({
+      msg: "OperationSuccessful"
+    });
+  }
+});
+
+router.get('/restore', function(req, res, next) {
+  if(req.user) {
+    res.send({ user: req.user })
+  } else {
+    res.send({ error: "NotLoggedIn" });
   }
 });
 
