@@ -47,7 +47,9 @@ router.post('/register', function(req, res, next) {
               passwd: passwd
             }, function(err, info) {
               if(err) return next(err);
-              else return res.sendStatus(200);
+              else return res.send({
+                msg: "RegisterationEmailSent"
+              });
             });
           }
         });
