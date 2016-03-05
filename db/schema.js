@@ -17,7 +17,7 @@ var counters = [{
 }, {
   id: "conf",
   init: 0
-}]
+}];
 
 var CounterSchema = mongoose.Schema({
   _id: String,
@@ -29,9 +29,10 @@ CounterSchema.statics.getNext = function(id, cb) {
     new: true
   }, function(err, doc) {
     if(err) cb(err);
+    else if(doc == null) cb(new Error("Now such counter"));
     else cb(false, doc.value);
   });
-}
+};
 
 var Counter = mongoose.model('Counter', CounterSchema);
 
@@ -57,7 +58,8 @@ var UserSchema = mongoose.Schema({
   _id: Number,
   email: String,
   passwd: String,
-  realname: String
+  realname: String,
+  isRoot: Boolean
 });
 
 UserSchema.methods.validatePasswd = function(passwd) {
@@ -80,3 +82,17 @@ UserSchema.methods.initPasswd = function() {
 }
 
 mongoose.model('User', UserSchema);
+
+/* Group */
+
+var GroupSchema = mongoose.Schema({
+  _id: Number,
+  title: String,
+
+  /* UID fields */
+  owner: Number,
+  admins: [Number],
+  members: [Number],
+});
+
+mongoose.model('Group', GroupSchema);

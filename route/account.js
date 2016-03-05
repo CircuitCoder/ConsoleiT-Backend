@@ -12,12 +12,13 @@ var mailer = require('../mailer');
 
 function newUser(email, realname, cb) {
   Counter.getNext("user", function(err, id) {
-    if(err) return next(err);
+    if(err) return cb(err, null);
 
     var user = new User({
       _id: id,
       email: email,
-      realname: realname
+      realname: realname,
+      isRoot: (id == 1) // The first registered user is root for default
     });
     var passwd = user.initPasswd();
     user.save(function(err, doc) {
@@ -58,24 +59,26 @@ router.post('/register', function(req, res, next) {
     User.findOne({email: req.body.email}).exec(function(err, doc) {
       if(err) return next(err);
       else if(doc) return res.send({error: 'DuplicatedEmail'});
-      else newUser(req.body.email, req.body.realname,
-      function cb(err, passwd) {
-        if(err) return next(err);
-        if(passwd) {
-          mailer('new_user', req.body.email, {
-            realname: req.body.realname,
-            passwd: passwd
-          }, function(err, info) {
-            if(err) return next(err);
-            else return res.send({
-              msg: "RegisterationEmailSent"
+      else {
+        function cb(err, passwd) {
+          if(err) return next(err);
+          if(passwd) {
+            mailer('new_user', req.body.email, {
+              realname: req.body.realname,
+              passwd: passwd
+            }, function(err, info) {
+              if(err) return next(err);
+              else return res.send({
+                msg: "RegisterationEmailSent"
+              });
             });
-          });
-        } else {
-          // Try again
-          newUser(req.body.email, req.body.realname, cb);
+          } else {
+            // Try again
+            newUser(req.body.email, req.body.realname, cb);
+          }
         }
-      });
+        newUser(req.body.email, req.body.realname, cb);
+      }
     });
   }
 });
