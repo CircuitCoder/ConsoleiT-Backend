@@ -1,5 +1,8 @@
 webserver:
   port: 3000
+  allowedOrigin:
+    - 'http://YOUR_DOMAIN_HERE'
+    - '/\.REGEXP\.com$/'
 
 db:
   uri: "mongodb://localhost/consoleit"

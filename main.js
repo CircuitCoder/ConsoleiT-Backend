@@ -22,7 +22,10 @@ passport.deserializeUser(function(user, done) {
 var app = express();
 
 app.use(bodyParser.json());
-app.use(cors());
+app.use(cors({
+  origin: config.webserver.allowedOrigin,
+  credentials: true
+}));
 
 app.use(session({
   secret: config.auth.secret,
