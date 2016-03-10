@@ -10,12 +10,7 @@ var strategy = new LocalStrategy({
   User.findOne({ email: email }).exec(function(err, user) {
     if(err) return done(err);
     else if(!user || !user.validatePasswd(passwd)) return done(null, false);
-    else return done(null, {
-      id: user._id,
-      email: user.email,
-      realname: user.realname,
-      isRoot: user.isRoot
-    });
+    else return done(null, user.toObject());
   });
 });
 

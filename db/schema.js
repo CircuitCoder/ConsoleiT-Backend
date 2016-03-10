@@ -59,7 +59,13 @@ var UserSchema = mongoose.Schema({
   email: String,
   passwd: String,
   realname: String,
-  isRoot: Boolean
+  isRoot: Boolean,
+
+  groups: [Number],
+  confs: [{
+    id: Number,
+    as: String,
+  }],
 });
 
 UserSchema.methods.validatePasswd = function(passwd) {
@@ -81,6 +87,13 @@ UserSchema.methods.initPasswd = function() {
   return token;
 }
 
+UserSchema.options.toObject = {
+  versionKey: false,
+  transform: (doc, ret, options) => {
+    delete ret.passwd;
+  }
+}
+
 mongoose.model('User', UserSchema);
 
 /* Group */
@@ -95,4 +108,49 @@ var GroupSchema = mongoose.Schema({
   members: [Number],
 });
 
+GroupSchema.options.toObject = {
+  versionKey: false
+}
+
 mongoose.model('Group', GroupSchema);
+
+/* Conference */
+
+var ConfSchema = mongoose.Schema({
+  _id: Number,
+  title: String,
+  group: Number,
+
+  roles: [{
+    id: Number,
+    title: String,
+    perm: Object
+  }],
+
+  members: [{
+    id: Number,
+    role: Number
+  }],
+
+  comm: [{
+    id: Number,
+    title: String
+  }],
+
+  dias: [{
+    id: Number,
+    comm: Number
+  }],
+
+  registered: [{
+    id: Number,
+    fromGroup: {type: Number, default: -1}, // -1 indicates a individual register
+    comm: Number
+  }],
+});
+
+ConfSchema.options.toObject = {
+  versionKey: false
+}
+
+mongoose.model('Conf', ConfSchema);

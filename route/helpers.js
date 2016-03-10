@@ -1,5 +1,8 @@
 // Helpers for routing
 
+var mongoose = require('mongoose');
+var Group = mongoose.model('Group');
+
 /**
  * Middelware for root-only operations
  */
@@ -29,3 +32,22 @@ module.exports.AL = (value) => {
     else return next();
   };
 }
+
+/**
+ * Middleware for group owner
+ * Requires a request parameter: group
+ * Addes a new field into the request object: the group mongoose object
+ */
+module.exports.groupOwner = (req, res, next) => {
+  if(!req.user) return res.send({ error: "NotLoggedIn" });
+  else Group.findById(req.params.group).exec((err, doc) => {
+    if(err) return next(err);
+    else if(doc) {
+      if(doc.owner == req.user._id) {
+        req.group = doc;
+        return next();
+      }
+      else return res.send({ error: "PermissionDenied" });
+    } else return res.send({ error: "NoSuchGroup" });
+  });
+};
