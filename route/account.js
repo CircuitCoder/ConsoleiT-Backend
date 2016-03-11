@@ -10,6 +10,8 @@ var Counter = mongoose.model('Counter');
 var passport = require('passport');
 var mailer = require('../mailer');
 
+var helpers = require('./helpers');
+
 function newUser(email, realname, cb) {
   Counter.getNext("user", function(err, id) {
     if(err) return cb(err, null);
@@ -53,34 +55,31 @@ router.post('/login', function(req, res, next) {
   }
 });
 
-router.post('/register', function(req, res, next) {
-  if(!req.body || !req.body.realname || !req.body.email) res.sendStatus(400);
-  else {
-    User.findOne({email: req.body.email}).exec(function(err, doc) {
-      if(err) return next(err);
-      else if(doc) return res.send({error: 'DuplicatedEmail'});
-      else {
-        function cb(err, passwd) {
-          if(err) return next(err);
-          if(passwd) {
-            mailer('new_user', req.body.email, {
-              realname: req.body.realname,
-              passwd: passwd
-            }, function(err, info) {
-              if(err) return next(err);
-              else return res.send({
-                msg: "RegisterationEmailSent"
-              });
+router.post('/register', helpers.hasFields(['realname', 'email']), function(req, res, next) {
+  User.findOne({email: req.body.email}).exec(function(err, doc) {
+    if(err) return next(err);
+    else if(doc) return res.send({error: 'DuplicatedEmail'});
+    else {
+      function cb(err, passwd) {
+        if(err) return next(err);
+        if(passwd) {
+          mailer('new_user', req.body.email, {
+            realname: req.body.realname,
+            passwd: passwd
+          }, function(err, info) {
+            if(err) return next(err);
+            else return res.send({
+              msg: "RegisterationEmailSent"
             });
-          } else {
-            // Try again
-            newUser(req.body.email, req.body.realname, cb);
-          }
+          });
+        } else {
+          // Try again
+          newUser(req.body.email, req.body.realname, cb);
         }
-        newUser(req.body.email, req.body.realname, cb);
       }
-    });
-  }
+      newUser(req.body.email, req.body.realname, cb);
+    }
+  });
 });
 
 router.get('/logout', function(req, res, next) {

@@ -36,33 +36,30 @@ function newGroup(title, owner, cb) {
 /**
  * Create a new group
  */
-router.post('/', helpers.root, (req, res, next) => {
-  if(!req.body || !req.body.title || !req.body.owner) res.sendStatus(400);
-  else {
-    User.findById(req.body.owner).exec((err, user) => {
-      if(err) return next(err);
-      else if(!user) return res.sendStatus(400);
+router.post('/', helpers.root, helpers.hasFields(['title', 'owner']), (req, res, next) => {
+  User.findById(req.body.owner).exec((err, user) => {
+    if(err) return next(err);
+    else if(!user) return res.sendStatus(400);
 
-      function cb(err, id) {
-        if(err) next(err);
-        else if(id) {
+    function cb(err, id) {
+      if(err) next(err);
+      else if(id) {
 
-          user.groups.push(id);
-          user.save((err) => {
-            if(err) return next(err);
-            else {
-              res.send({
-                msg: "OperationSuccessful",
-                id: id
-              });
-            }
-          });
+        user.groups.push(id);
+        user.save((err) => {
+          if(err) return next(err);
+          else {
+            res.send({
+              msg: "OperationSuccessful",
+              id: id
+            });
+          }
+        });
 
-        } else newGroup(req.body.title, req.body.owner, cb)
-      }; 
-      newGroup(req.body.title, req.body.owner, cb);
-    });
-  }
+      } else newGroup(req.body.title, req.body.owner, cb)
+    }; 
+    newGroup(req.body.title, req.body.owner, cb);
+  });
 });
 
 /**
@@ -85,25 +82,44 @@ router.get('/:group(\\d+)', helpers.loggedin, (req, res, next) => {
 /**
  * Add member
  */
-router.post('/:group(\\d+)/members', helpers.groupOwner, (req, res, next) => {
+router.post('/:group(\\d+)/members', helpers.groupOwner, helpers.hasFields(['member']), (req, res, next) => {
+  User.findById(req.body.owner).exec((err, doc) => {
+    if(doc) {
+      //TODO: check for integer
+      req.group.members.addToSet(req.body.member);
+      req.group.save();
+      return res.send({ msg: "OperationSuccessful" });
+    } else {
+      return res.status(400).send({ msg: "NoSuchUser" });
+    }
+  });
 });
 
 /**
  * Remove member
  */
 router.delete('/:group(\\d+)/members/:member(\\d+)', helpers.groupOwner, (req, res, next) => {
+  if(req.group.members.indexOf(req.params.member) == -1) return res.sendStatus(400);
+  else {
+    req.group.members.pull(req.params.member);
+    req.group.save();
+    return res.send({ msg: "OperationSuccessful" });
+  }
 });
 
 /**
  * Transfer owner
  */
-router.post('/:group(\\d+)/settings/owner', helpers.groupOwner, (req, res, next) => {
-  if(!req.body || !req.body.owner) return res.sendStatus(400);
-  else {
-    //TODO: logic
-    console.log(req.group);
-    res.sendStatus(200);
-  }
+router.post('/:group(\\d+)/settings/owner', helpers.groupOwner, helpers.hasFields(['owner']), (req, res, next) => {
+  User.findById(req.body.owner).exec((err, doc) => {
+    if(doc) {
+      req.group.owner = req.body.owner;
+      req.group.save();
+      return res.send({ msg: "OperationSuccessful" });
+    } else {
+      return res.status(400).send({ msg: "NoSuchUser" });
+    }
+  });
 });
 
 module.exports = router;

@@ -35,19 +35,46 @@ module.exports.AL = (value) => {
 
 /**
  * Middleware for group owner
- * Requires a request parameter: group
+ * Requires a request parameter or field: group; If both are present, the parameter is used
  * Addes a new field into the request object: the group mongoose object
  */
 module.exports.groupOwner = (req, res, next) => {
   if(!req.user) return res.send({ error: "NotLoggedIn" });
-  else Group.findById(req.params.group).exec((err, doc) => {
-    if(err) return next(err);
-    else if(doc) {
-      if(doc.owner == req.user._id) {
-        req.group = doc;
-        return next();
-      }
-      else return res.send({ error: "PermissionDenied" });
-    } else return res.send({ error: "NoSuchGroup" });
-  });
+  else {
+    var group;
+    if(req.params.group) group = req.params.group;
+    else if(req.body && req.body.group) group = req.body.group;
+
+    Group.findById(group).exec((err, doc) => {
+      if(err) return next(err);
+      else if(doc) {
+        if(doc.owner == req.user._id) {
+          req.group = doc;
+          return next();
+        }
+        else return res.send({ error: "PermissionDenied" });
+      } else return res.send({ error: "NoSuchGroup" });
+    });
+  }
 };
+
+/**
+ * Middleware for checking whether a body field is present
+ * @param {String[]} fields The required fields
+ * @returns {Function} The generated middleware
+ */
+module.exports.hasFields = (fields) => {
+  return (req, res, next) => {
+    if(!req.body) return res.sendStatus(400);
+    Promise.all(fields.map((e) => {
+      return new Promise((resolve, reject) => {
+        if(e in req.body) resolve();
+        else reject();
+      });
+    })).then((results) => {
+      return next();
+    }, (reason) => {
+      return res.sendStatus(400);
+    });
+  }
+}

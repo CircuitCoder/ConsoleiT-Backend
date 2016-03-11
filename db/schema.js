@@ -52,6 +52,24 @@ counters.forEach(function(e) {
   });
 });
 
+var SettingSchema = mongoose.Schema({
+  _id: String,
+  value: {} // Any
+});
+
+SettingSchema.statics.get = (id, cb) => {
+  return Setting.findById(id).lean().exec(cb);
+};
+
+SettingSchema.statics.set = (id, value, cb) => {
+  return Setting.findByIdAndUpdate(id, {$set: { value } }, { upsert: true, new: true }).exec((err, doc) => {
+    if(err) return cb(err, null);
+    else return cb(false, doc.value);
+  });
+};
+
+var Setting = mongoose.model('Setting', SettingSchema);
+
 /* User */
 
 var UserSchema = mongoose.Schema({
@@ -64,7 +82,7 @@ var UserSchema = mongoose.Schema({
   groups: [Number],
   confs: [{
     id: Number,
-    as: String,
+    as: Number,
   }],
 });
 
@@ -116,16 +134,43 @@ mongoose.model('Group', GroupSchema);
 
 /* Conference */
 
+var defaultRoles = [{
+  id: 1,
+  title: '秘书长',
+  perm: { all: true }
+}, {
+  id: 2,
+  title: '学术总监',
+  perm: {
+    form: {
+      academic: { all: true }
+    }
+  }
+}, {
+  id: 3,
+  title: '会务总监',
+  perm: {
+    form: {
+      register: {
+        view: true
+      }
+    }
+  }
+}];
+
 var ConfSchema = mongoose.Schema({
   _id: Number,
   title: String,
   group: Number,
 
-  roles: [{
-    id: Number,
-    title: String,
-    perm: Object
-  }],
+  roles: {
+    type: [{
+      id: Number,
+      title: String,
+      perm: {}
+    }],
+    default: defaultRoles
+  },
 
   members: [{
     id: Number,
