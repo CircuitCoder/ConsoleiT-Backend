@@ -44,18 +44,10 @@ router.post('/', helpers.root, helpers.hasFields(['title', 'owner']), (req, res,
     function cb(err, id) {
       if(err) next(err);
       else if(id) {
-
-        user.groups.push(id);
-        user.save((err) => {
-          if(err) return next(err);
-          else {
-            res.send({
-              msg: "OperationSuccessful",
-              id: id
-            });
-          }
+        res.send({
+          msg: "OperationSuccessful",
+          id: id
         });
-
       } else newGroup(req.body.title, req.body.owner, cb)
     }; 
     newGroup(req.body.title, req.body.owner, cb);

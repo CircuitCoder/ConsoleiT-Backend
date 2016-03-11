@@ -78,12 +78,6 @@ var UserSchema = mongoose.Schema({
   passwd: String,
   realname: String,
   isRoot: Boolean,
-
-  groups: [Number],
-  confs: [{
-    id: Number,
-    as: Number,
-  }],
 });
 
 UserSchema.methods.validatePasswd = function(passwd) {

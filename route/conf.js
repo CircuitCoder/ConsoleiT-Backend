@@ -39,16 +39,10 @@ router.post('/', helpers.hasFields(['title', 'group']), helpers.groupOwner, (req
   function cb(err, id) {
     if(err) next(err);
     else if(id) {
-      User.findByIdAndUpdate(req.user._id, { $addToSet: { confs: { id, as: 1 } } }).exec((err, doc) => {
-        if(err) return next(err);
-        else {
-          res.send({
-            msg: "OperationSuccessful",
-            id: id
-          });
-        }
+      res.send({
+        msg: "OperationSuccessful",
+        id: id
       });
-
     } else newConf(req.body.title, req.body.group, req.user._id, cb)
   }; 
   newConf(req.body.title, req.body.group, req.user._id, cb);
