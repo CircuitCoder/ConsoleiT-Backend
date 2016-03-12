@@ -58,6 +58,7 @@ router.post('/', helpers.root, helpers.hasFields(['title', 'owner']), (req, res,
  * Delete a existing group
  */
 router.delete('/:id(\\d+)', helpers.root, (req, res, next) => {
+  //TODO: Fill logic here
 });
 
 /**
@@ -82,7 +83,7 @@ router.post('/:group(\\d+)/members', helpers.groupOwner, helpers.hasFields(['mem
       req.group.save();
       return res.send({ msg: "OperationSuccessful" });
     } else {
-      return res.status(400).send({ msg: "NoSuchUser" });
+      return res.send({ error: "NoSuchUser" });
     }
   });
 });
@@ -109,7 +110,7 @@ router.post('/:group(\\d+)/settings/owner', helpers.groupOwner, helpers.hasField
       req.group.save();
       return res.send({ msg: "OperationSuccessful" });
     } else {
-      return res.status(400).send({ msg: "NoSuchUser" });
+      return res.send({ error: "NoSuchUser" });
     }
   });
 });

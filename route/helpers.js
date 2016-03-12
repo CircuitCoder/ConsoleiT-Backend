@@ -6,7 +6,7 @@ var Conf = mongoose.model('Conf');
 
 function getParam(req, name) {
   var result;
-  if(name in req.params) result = req.params[name];
+  if(req.params && name in req.params) result = req.params[name];
   else if(req.body && name in req.body) result = req.body[name];
   return result;
 }
@@ -91,9 +91,10 @@ module.exports.hasFields = (fields) => {
  * If both are present, the parameter is used
  * TODO: More tests
  */
-module.exports.hasPerms = (perms) => {
+module.exports.hasPerms = (perms, except) => {
   return (req, res, next) => {
-    if(!req.user) return res.send({ error: "NotLoggedIn" });
+    if(except && except(req)) return next();
+    else if(!req.user) return res.send({ error: "NotLoggedIn" });
     else {
       var conf = getParam(req, "conf");
       Conf.findById(conf, {
@@ -126,4 +127,18 @@ module.exports.hasPerms = (perms) => {
       });
     }
   }
+};
+
+/**
+ * Middleware for checking if the requested conference exists
+ * Requires a requiest parameter or field: conf
+ * If both are present, the parameter is used
+ */
+module.exports.confExists = (req, res, next) => {
+  var conf = getParam(req, 'conf');
+  Conf.findById(conf).select('_id').exec((err, doc) => {
+    if(err) return next(err);
+    else if(doc) return next();
+    else return res.sendStatus({ error: "NoSuchConf" });
+  });
 };

@@ -170,10 +170,8 @@ var ConfSchema = mongoose.Schema({
    * Forms including:
    * Academic and Participant
    */
-  forms: [{
-    _id: String,
-    fields: String, // Stored as JSON
-  }],
+  academicForm: String,
+  participantForm: String,
 
   members: [{
     _id: Number,
@@ -189,6 +187,14 @@ var ConfSchema = mongoose.Schema({
     _id: Number,
     comm: Number,
     submission: String, // Form data in JSON
+    
+    /**
+     * Status for academic team members:
+     *
+     * 1: registered
+     * 2: assigned
+     * 3: rejected
+     */
     status: Number,
   }],
 

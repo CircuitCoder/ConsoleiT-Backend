@@ -35,6 +35,10 @@ function newConf(title, group, uid, cb) {
   });
 }
 
+/**
+ * Creation
+ */
+
 router.post('/', helpers.hasFields(['title', 'group']), helpers.groupOwner, (req, res, next) => {
   function cb(err, id) {
     if(err) next(err);
@@ -48,8 +52,123 @@ router.post('/', helpers.hasFields(['title', 'group']), helpers.groupOwner, (req
   newConf(req.body.title, req.body.group, req.user._id, cb);
 });
 
-router.post('/:conf(\\d+)/form/:form(academic|participant)', helpers.hasPerms(['form.academic.modify']), (req, res, next) => {
-  res.sendStatus(200);
+/**
+ * Member and roles
+ */
+
+router.post('/:conf(\\d+)/members/:member(\\d+)',
+  helpers.hasPerms(['members.modify']),
+  helpers.hasFields(['role']),
+  (req, res, next) => {
+    User.findById(req.params.member).exec((err, doc) => {
+      if(err) next(err);
+      else if(doc) {
+        Conf.findOneAndUpdate({
+          _id: req.params.conf,
+          'members._id': req.params.member,
+        }, {
+          'members.$.role': req.body.role,
+        }).exec((err, doc) => {
+          if(err) return next(err);
+          else if(doc) return res.send({ msg: 'OperationSuccessful' });
+          else {
+            Conf.findByIdAndUpdate(req.params.conf, { $push: { members: { _id: req.params.member, role: req.body.role }}})
+              .exec((err, doc) => {
+                if(err) return next(err);
+                else return res.send({ msg: 'OperationSuccessful' });
+              });
+          }
+        });
+      } else {
+        res.sendStatus(400);
+      }
+    });
+  });
+
+router.delete('/:conf(\\d+)/members/:member(\\d+)',
+  helpers.hasPerms(['members.modify']),
+  (req, res, next) => {
+    Conf.findByIdAndUpdate(req.params.conf, { $pull: { members: { $elemMatch: { _id: req.params.member }}}})
+      .exec((err, doc) => {
+        if(err) return next(err);
+        else return res.send({ msg: 'OperationSuccessful' });
+      });
+  });
+
+/**
+ * Forms and applications
+ */
+
+router.post('/:conf(\\d+)/academic/form',
+  helpers.hasPerms(['form.academic.modify']),
+  helpers.hasFields(['form']),
+  (req, res, next) => {
+    //TODO: lint the input
+    
+    Conf.findByIdAndUpdate(req.params.conf, { $set: { academicForm: JSON.stringify(req.body.form) } }).exec((err, doc) => {
+      if(err) return next(err);
+      else return res.send({
+        msg: "OperationSuccessful"
+      });
+    });
 });
+
+router.post('/:conf(\\d+)/participants/form',
+  helpers.hasPerms(['form.participant.edit']),
+  helpers.hasFields(['form']),
+  (req, res, next) => {
+    Conf.findByIdAndUpdate(req.params.conf, { $set: { participantForm : JSON.stringify(req.body.form) } }).exec((err, doc) => {
+      if(err) return next(err);
+      else return res.send({
+        msg: "OperationSuccessful"
+      });
+    });
+  });
+
+router.post('/:conf(\\d+)/academic/:member(\\d+)',
+  helpers.loggedin,
+  helpers.confExists,
+  helpers.hasPerms(['form.academic.view.modify'], (req) => req.user && req.params.member == req.user._id ),
+  helpers.hasFields(['content']),
+  (req, res, next) => {
+    Conf.findOneAndUpdate({
+      _id: req.params.conf,
+      'academicMembers._id': req.params.member,
+    }, {
+      'academicMembers.$.submission': JSON.stringify(req.body.content)
+    }).exec((err, doc) => {
+      if(err) return next(err);
+      else if(doc) return res.send({ msg: "OperationSuccessful" });
+      else {
+        Conf.findByIdAndUpdate(req.params.conf, { $push: { academicMembers: { _id: req.params.member, submission: JSON.stringify(req.body.content) }}})
+          .exec((err, doc) => {
+            if(err) return next(err);
+            else return res.send({ msg: "OperationSuccessful" });
+          });
+      }
+    });
+  });
+
+router.get('/:conf(\\d+)/academic/:member(\\d+)',
+  helpers.hasPerms(['form.academic.view'], (req) => req.user && req.params.member == req.user._id ),
+  (req, res, next) => {
+    Conf.findById(req.params.conf, { 'academicMembers._id': req.params.member, academicMembers: true }).exec((err, doc) => {
+      if(err) return next(err);
+
+      // If the current user is the requested user, then it's possible that the conf doesn't exist
+      else if(doc && doc.academicMembers) return res.send(doc.academicMembers[0]);
+      else return res.send({ error: "NoSuchMember" });
+    });
+  });
+
+router.get('/:conf(\\d+)/academic',
+  helpers.loggedin,
+  helpers.confExists,
+  (req, res, next) => {
+    Conf.findById(req.params.conf).select('academicMembers._id').exec((err, doc) => {
+      if(err) return next(err);
+      else return res.send(doc.toObject());
+    });
+  });
 
 module.exports = router;
