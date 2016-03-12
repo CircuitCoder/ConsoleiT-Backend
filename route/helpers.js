@@ -2,6 +2,14 @@
 
 var mongoose = require('mongoose');
 var Group = mongoose.model('Group');
+var Conf = mongoose.model('Conf');
+
+function getParam(req, name) {
+  var result;
+  if(name in req.params) result = req.params[name];
+  else if(req.body && name in req.body) result = req.body[name];
+  return result;
+}
 
 /**
  * Middelware for root-only operations
@@ -41,9 +49,7 @@ module.exports.AL = (value) => {
 module.exports.groupOwner = (req, res, next) => {
   if(!req.user) return res.send({ error: "NotLoggedIn" });
   else {
-    var group;
-    if(req.params.group) group = req.params.group;
-    else if(req.body && req.body.group) group = req.body.group;
+    var group = getParam(req, 'group');
 
     Group.findById(group).exec((err, doc) => {
       if(err) return next(err);
@@ -78,3 +84,46 @@ module.exports.hasFields = (fields) => {
     });
   }
 }
+
+/**
+ * Middleware for checking if the current user has a specified set of permission
+ * Requires a request parameter or field: conf
+ * If both are present, the parameter is used
+ * TODO: More tests
+ */
+module.exports.hasPerms = (perms) => {
+  return (req, res, next) => {
+    if(!req.user) return res.send({ error: "NotLoggedIn" });
+    else {
+      var conf = getParam(req, "conf");
+      Conf.findById(conf, {
+        roles: true,
+        members: { $elemMatch: { _id: req.user._id } },
+      }).lean().exec((err, doc) => {
+        if(err) return next(err);
+        else if(!doc) return res.sendStatus(400);
+        else if(!doc.members) return res.send({ error: "PermissionDenied" });
+
+        var roleId = doc.members[0].role;
+        var role = doc.roles.filter( e => e._id == roleId )[0];
+
+        Promise.all(perms.map((e) => {
+          return (resolve, reject) => {
+            var permBase = role.perm;
+            var segs = e.split('.');
+            for(var i = 0; i <= segs.length; ++i) {
+              if(i == segs.length) return resolve();
+              else if(permBase.all) return resolve();
+              else if(permBase[segs[i]]) permBase = permBase[seg[i]];
+              else return reject(e);
+            }
+          };
+        })).then((results) => {
+          return next();
+        }, (reason) => {
+          return res.sendStatus({ error: "PermissionDenied", perm: reason });
+        });
+      });
+    }
+  }
+};

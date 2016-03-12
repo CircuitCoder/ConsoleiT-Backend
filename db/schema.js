@@ -129,11 +129,11 @@ mongoose.model('Group', GroupSchema);
 /* Conference */
 
 var defaultRoles = [{
-  id: 1,
+  _id: 1,
   title: '秘书长',
   perm: { all: true }
 }, {
-  id: 2,
+  _id: 2,
   title: '学术总监',
   perm: {
     form: {
@@ -141,11 +141,11 @@ var defaultRoles = [{
     }
   }
 }, {
-  id: 3,
+  _id: 3,
   title: '会务总监',
   perm: {
     form: {
-      register: {
+      participant: {
         view: true
       }
     }
@@ -159,32 +159,45 @@ var ConfSchema = mongoose.Schema({
 
   roles: {
     type: [{
-      id: Number,
+      _id: Number,
       title: String,
       perm: {}
     }],
     default: defaultRoles
   },
 
+  /**
+   * Forms including:
+   * Academic and Participant
+   */
+  forms: [{
+    _id: String,
+    fields: String, // Stored as JSON
+  }],
+
   members: [{
-    id: Number,
+    _id: Number,
     role: Number
   }],
 
   comm: [{
-    id: Number,
+    _id: Number,
     title: String
   }],
 
-  dias: [{
-    id: Number,
-    comm: Number
+  academicMembers: [{
+    _id: Number,
+    comm: Number,
+    submission: String, // Form data in JSON
+    status: Number,
   }],
 
-  registered: [{
+  participants: [{
     id: Number,
     fromGroup: {type: Number, default: -1}, // -1 indicates a individual register
-    comm: Number
+    comm: Number,
+    submission: String, // Form data in JSON
+    status: Number,
   }],
 });
 

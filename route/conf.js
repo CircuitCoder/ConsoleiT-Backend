@@ -19,7 +19,7 @@ function newConf(title, group, uid, cb) {
       title,
       group,
       members: [{
-        id: uid,
+        _id: uid,
         role: 1
       }]
     });
@@ -46,6 +46,10 @@ router.post('/', helpers.hasFields(['title', 'group']), helpers.groupOwner, (req
     } else newConf(req.body.title, req.body.group, req.user._id, cb)
   }; 
   newConf(req.body.title, req.body.group, req.user._id, cb);
+});
+
+router.post('/:conf(\\d+)/form/:form(academic|participant)', helpers.hasPerms(['form.academic.modify']), (req, res, next) => {
+  res.sendStatus(200);
 });
 
 module.exports = router;
