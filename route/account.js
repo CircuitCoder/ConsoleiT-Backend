@@ -100,17 +100,21 @@ router.get('/restore', function(req, res, next) {
   }
 });
 
-router.post('/settings/passwd', helpers.loggedin, helpers.hasFields(['passwd']), function(req, res, next) {
+router.post('/settings/passwd', helpers.loggedin, helpers.hasFields(['passwd', 'oripasswd']), function(req, res, next) {
   User.findById(req.user._id).exec((err, doc) => {
     if(err) return next(err);
     else if(!doc) return res.sendStatus(500);
     else {
       //TODO: check passwd format
-      doc.setPasswd(req.body.passwd);
-      doc.save((err) => {
-        if(err) return next(err);
-        else return res.send({ msg: "OperationSuccessful" });
-      });
+      if(doc.validatePasswd(req.body.oripasswd)) {
+        doc.setPasswd(req.body.passwd);
+        doc.save((err) => {
+          if(err) return next(err);
+          else return res.send({ msg: "OperationSuccessful" });
+        });
+      } else {
+        return res.send({ error: "PasswdMismatch" });
+      }
     }
   });
 });
