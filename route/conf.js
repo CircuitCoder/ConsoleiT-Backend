@@ -75,6 +75,17 @@ router.post('/', helpers.hasFields(['title', 'group']), helpers.groupOwner, (req
 });
 
 /**
+ * Data
+ */
+
+router.get('/:conf(\\d+)', helpers.loggedin, (req, res, next) => {
+  Conf.findById(req.params.conf).select("title members roles status").lean().exec((err, doc) => {
+    if(err) return next(err);
+    else res.send(doc);
+  });
+});
+
+/**
  * Member and roles
  */
 
@@ -189,6 +200,7 @@ router.get('/:conf(\\d+)/academic',
   (req, res, next) => {
     Conf.findById(req.params.conf).select('academicMembers._id').exec((err, doc) => {
       if(err) return next(err);
+      //TODO: check for conf status
       else return res.send(doc.toObject());
     });
   });
