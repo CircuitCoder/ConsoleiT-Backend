@@ -156,6 +156,23 @@ var ConfSchema = mongoose.Schema({
   _id: Number,
   title: String,
   group: Number,
+  status: {
+    /**
+     * Status for this conference
+     * Possible values:
+     * 0 Initialized
+     *
+     * 1 Academic registeration in process
+     * 2 Pending applicants registeration
+     * 3 Pending academic tests
+     * 4 Before conference
+     *
+     * -1 Conference finished
+     * -2 Conference abandoned
+     */
+    type: Number,
+    default: 0
+  },
 
   roles: {
     type: [{
@@ -199,7 +216,7 @@ var ConfSchema = mongoose.Schema({
   }],
 
   participants: [{
-    id: Number,
+    _id: Number,
     fromGroup: {type: Number, default: -1}, // -1 indicates a individual register
     comm: Number,
     submission: String, // Form data in JSON

@@ -36,6 +36,28 @@ function newConf(title, group, uid, cb) {
 }
 
 /**
+ * Listing
+ */
+
+router.get('/', helpers.loggedin, (req, res, next) => {
+  Conf.find({$or: [
+    { "members._id": req.user._id },
+    { "academicMembers._id": req.user._id },
+    { "participants._id": req.user._id }
+  ]}).select("title").lean().exec((err, docs) => {
+    if(err) return next(err);
+    else return res.send(docs);
+  });
+});
+
+router.get('/available', helpers.loggedin, (req, res, next) => {
+  Conf.find({ status: { $gt: 0 } }).select("title").lean().exec((err, docs) => {
+    if(err) return next(err);
+    else res.send(docs);
+  });
+});
+
+/**
  * Creation
  */
 
