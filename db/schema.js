@@ -212,7 +212,7 @@ var ConfSchema = mongoose.Schema({
      * 2: assigned
      * 3: rejected
      */
-    status: Number,
+    status: { type: Number, default: 1 },
   }],
 
   participants: [{
