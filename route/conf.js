@@ -79,9 +79,27 @@ router.post('/', helpers.hasFields(['title', 'group']), helpers.groupOwner, (req
  */
 
 router.get('/:conf(\\d+)', helpers.loggedin, (req, res, next) => {
-  Conf.findById(req.params.conf).select("title members roles status").lean().exec((err, doc) => {
+  Conf.findById(req.params.conf).select("title members roles status").lean().exec((err, conf) => {
     if(err) return next(err);
-    else res.send(doc);
+    else {
+      Promise.all([
+        new Promise((resolve, reject) => {
+          if(!conf.members) resolve([]);
+          else User.find({ _id: { $in: conf.members.map((e) => e._id) }}).select("realname email").lean().exec((err, users) => {
+            if(err) reject(err);
+            else resolve(users);
+          });
+        })
+      ]).then((result) => {
+        console.log(result);
+        res.send({
+          conf: conf,
+          members: result[0]
+        });
+      }, (reason) => {
+        next(err);
+      });
+    }
   });
 });
 
