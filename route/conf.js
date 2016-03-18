@@ -222,8 +222,8 @@ router.get('/:conf(\\d+)/academic/:member(\\d+)',
       if(err) return next(err);
 
       // If the current user is the requested user, then it's possible that the conf doesn't exist
-      else if(doc && doc.academicMembers) return res.send(doc.academicMembers[0]);
-      else return res.send({ error: "NoSuchMember" });
+      else if(doc.academicMembers.length > 0) return res.send(doc.academicMembers[0]);
+      else return res.send({});
     });
   });
 

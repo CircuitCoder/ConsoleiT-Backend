@@ -187,8 +187,14 @@ var ConfSchema = mongoose.Schema({
    * Forms including:
    * Academic and Participant
    */
-  academicForm: String,
-  participantForm: String,
+  academicForm: {
+    type: String,
+    default: '[]'
+  },
+  participantForm: {
+    type: String,
+    default: '[]'
+  },
 
   members: [{
     _id: Number,
