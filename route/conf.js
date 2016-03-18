@@ -187,7 +187,7 @@ router.get('/:conf(\\d+)/academic/form',
   (req, res, next) => {
     Conf.findById(req.params.conf).select('academicForm').lean().exec((err, doc) => {
       if(err) return next(err);
-      else return res.send(doc);
+      else return res.send(doc.academicForm);
     });
   });
 
