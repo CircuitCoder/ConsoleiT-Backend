@@ -6,6 +6,7 @@ var router = express.Router();
 var mongoose = require('mongoose');
 var Conf = mongoose.model('Conf');
 var Counter = mongoose.model('Counter');
+var Group = mongoose.model('Group');
 var User = mongoose.model('User');
 
 var helpers = require('./helpers');
@@ -79,7 +80,7 @@ router.post('/', helpers.hasFields(['title', 'group']), helpers.groupOwner, (req
  */
 
 router.get('/:conf(\\d+)', helpers.loggedin, (req, res, next) => {
-  Conf.findById(req.params.conf).select("title members roles status").lean().exec((err, conf) => {
+  Conf.findById(req.params.conf).select("title group members roles status").lean().exec((err, conf) => {
     if(err) return next(err);
     else {
       Promise.all([
@@ -89,15 +90,21 @@ router.get('/:conf(\\d+)', helpers.loggedin, (req, res, next) => {
             if(err) reject(err);
             else resolve(users);
           });
+        }), new Promise((resolve, reject) => {
+          console.log(conf.group);
+          Group.findById(conf.group).select("title").lean().exec((err, group) => {
+            if(err) reject(err);
+            else resolve(group);
+          });
         })
-      ]).then((result) => {
-        console.log(result);
+      ]).then((results) => {
         res.send({
           conf: conf,
-          members: result[0]
+          members: results[0],
+          group: results[1]
         });
       }, (reason) => {
-        next(err);
+        next(reason);
       });
     }
   });
