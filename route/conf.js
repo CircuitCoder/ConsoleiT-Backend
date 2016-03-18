@@ -91,7 +91,6 @@ router.get('/:conf(\\d+)', helpers.loggedin, (req, res, next) => {
             else resolve(users);
           });
         }), new Promise((resolve, reject) => {
-          console.log(conf.group);
           Group.findById(conf.group).select("title").lean().exec((err, group) => {
             if(err) reject(err);
             else resolve(group);
@@ -180,6 +179,15 @@ router.post('/:conf(\\d+)/participants/form',
       else return res.send({
         msg: "OperationSuccessful"
       });
+    });
+  });
+
+router.get('/:conf(\\d+)/academic/form',
+  helpers.loggedin,
+  (req, res, next) => {
+    Conf.findById(req.params.conf).select('academicForm').lean().exec((err, doc) => {
+      if(err) return next(err);
+      else return res.send(doc);
     });
   });
 
