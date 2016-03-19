@@ -249,7 +249,7 @@ router.get('/:conf(\\d+)/academic/all',
         User.find({ _id: { $in: doc.academicMembers }}).select("email realname").lean().exec((err, users) => {
           if(err) return next(err);
           else return res.send({
-            list: doc,
+            list: doc.academicMembers,
             members: users
           });
         });
