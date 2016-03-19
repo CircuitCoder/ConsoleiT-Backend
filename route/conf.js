@@ -243,7 +243,7 @@ router.get('/:conf(\\d+)/academic',
 router.get('/:conf(\\d+)/academic/all',
   helpers.hasPerms(['form.academic.view']),
   (req, res, next) => {
-    Conf.findById(req.params.conf).select("academicMembers._id").lean().exec((err, doc) => {
+    Conf.findById(req.params.conf).select("academicMembers._id academicMembers.status").lean().exec((err, doc) => {
       if(err) return next(err);
       else {
         User.find({ _id: { $in: doc.academicMembers }}).select("email realname").lean().exec((err, users) => {
