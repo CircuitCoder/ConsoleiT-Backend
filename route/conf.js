@@ -218,7 +218,7 @@ router.post('/:conf(\\d+)/academic/:member(\\d+)',
 router.get('/:conf(\\d+)/academic/:member(\\d+)',
   helpers.hasPerms(['form.academic.view'], (req) => req.user && req.params.member == req.user._id ),
   (req, res, next) => {
-    Conf.findById(req.params.conf, { 'academicMembers._id': req.params.member, academicMembers: true }).exec((err, doc) => {
+    Conf.findById(req.params.conf, { academicMembers: { $elemMatch: { _id: req.params.member } } }).select('academicMembers').exec((err, doc) => {
       if(err) return next(err);
 
       // If the current user is the requested user, then it's possible that the conf doesn't exist
@@ -231,11 +231,30 @@ router.get('/:conf(\\d+)/academic',
   helpers.loggedin,
   helpers.confExists,
   (req, res, next) => {
-    Conf.findById(req.params.conf).select('academicMembers._id').exec((err, doc) => {
+    Conf.findById(req.params.conf , {
+      academicMembers: { $elemMatch: {status: 2} }
+    }).select("academicMembers._id").exec((err, doc) => {
       if(err) return next(err);
       //TODO: check for conf status
       else return res.send(doc.toObject());
     });
   });
+
+router.get('/:conf(\\d+)/academic/all',
+  helpers.hasPerms(['form.academic.view']),
+  (req, res, next) => {
+    Conf.findById(req.params.conf).select("academicMembers._id").lean().exec((err, doc) => {
+      if(err) return next(err);
+      else {
+        User.find({ _id: { $in: doc.academicMembers }}).select("email realname").lean().exec((err, users) => {
+          if(err) return next(err);
+          else return res.send({
+            list: doc,
+            members: users
+          });
+        });
+      }
+    });
+  })
 
 module.exports = router;
