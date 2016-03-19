@@ -45,14 +45,14 @@ router.get('/', helpers.loggedin, (req, res, next) => {
     { "members._id": req.user._id },
     { "academicMembers._id": req.user._id },
     { "participants._id": req.user._id }
-  ]}).select("title").lean().exec((err, docs) => {
+  ]}).select("title status").lean().exec((err, docs) => {
     if(err) return next(err);
     else return res.send({ confs: docs });
   });
 });
 
 router.get('/available', helpers.loggedin, (req, res, next) => {
-  Conf.find({ status: { $gt: 0 } }).select("title").lean().exec((err, docs) => {
+  Conf.find({ status: { $gt: 0 } }).select("title status").lean().exec((err, docs) => {
     if(err) return next(err);
     else res.send({ confs: docs });
   });
