@@ -163,6 +163,7 @@ var defaultRoles = [{
 var ConfSchema = mongoose.Schema({
   _id: Number,
   title: String,
+  desc: String,
   group: Number,
   status: {
     /**

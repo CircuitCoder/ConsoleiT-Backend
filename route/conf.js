@@ -46,7 +46,7 @@ router.get('/', helpers.loggedin, (req, res, next) => {
     { "members._id": req.user._id },
     { "academicMembers._id": req.user._id },
     { "participants._id": req.user._id }
-  ]}).select("title status").lean().exec((err, docs) => {
+  ]}).select("title status pinned").lean().exec((err, docs) => {
     if(err) return next(err);
     else return res.send({ confs: docs });
   });
@@ -81,7 +81,7 @@ router.post('/', helpers.hasFields(['title', 'group']), helpers.groupOwner, (req
  */
 
 router.get('/:conf(\\d+)', helpers.loggedin, (req, res, next) => {
-  Conf.findById(req.params.conf).select("title group members roles status").lean().exec((err, conf) => {
+  Conf.findById(req.params.conf).select("title desc group members roles status").lean().exec((err, conf) => {
     if(err) return next(err);
     else {
       Promise.all([
@@ -109,6 +109,22 @@ router.get('/:conf(\\d+)', helpers.loggedin, (req, res, next) => {
     }
   });
 });
+
+router.post('/:conf(\\d+)',
+  helpers.hasPerms(["settings"]),
+  helpers.hasFields(["settings"]),
+  (req, res, next) => {
+    var updateMap = {};
+    ["title", "desc", "status"].forEach((e) => {
+      if(e in req.body.settings) updateMap[e] = req.body.settings[e];
+    });
+    Conf.findByIdAndUpdate(req.params.conf, {$set: updateMap}).exec((err, doc) => {
+      if(err) next(err);
+      else res.send({
+        msg: "OperationSuccessful",
+      });
+    });
+  });
 
 /**
  * Member and roles
