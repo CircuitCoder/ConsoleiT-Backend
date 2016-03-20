@@ -13,7 +13,6 @@ module.exports = function(id, to, data, cb) {
   if(!id in config.mailer.tmpls) return cb("No such template");
   else {
     var content = mustache.render(getTemplate(id), data);
-    console.log(content);
     transporter.sendMail({
       to: to,
       subject: config.mailer.tmpls[id].title,
