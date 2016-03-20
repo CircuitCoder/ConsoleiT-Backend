@@ -134,6 +134,10 @@ var defaultRoles = [{
   perm: { all: true }
 }, {
   _id: 2,
+  title: '副秘书长',
+  perm: { all: true }
+}, {
+  _id: 3,
   title: '学术总监',
   perm: {
     form: {
@@ -141,14 +145,18 @@ var defaultRoles = [{
     }
   }
 }, {
-  _id: 3,
+  _id: 4,
   title: '会务总监',
   perm: {
     form: {
-      participant: {
-        view: true
-      }
+      participant: { all: true }
     }
+  }
+}, {
+  _id: 5,
+  title: '技术总监',
+  perm: {
+    all: true
   }
 }];
 
@@ -172,6 +180,10 @@ var ConfSchema = mongoose.Schema({
      */
     type: Number,
     default: 0
+  },
+  pinned: {
+    type: Boolean,
+    default: false
   },
 
   roles: {

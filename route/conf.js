@@ -42,6 +42,7 @@ function newConf(title, group, uid, cb) {
 
 router.get('/', helpers.loggedin, (req, res, next) => {
   Conf.find({$or: [
+    { "pinned": true },
     { "members._id": req.user._id },
     { "academicMembers._id": req.user._id },
     { "participants._id": req.user._id }
