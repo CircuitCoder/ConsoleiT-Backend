@@ -44,8 +44,9 @@ router.get('/', helpers.loggedin, (req, res, next) => {
   Conf.find({$or: [
     { "pinned": true },
     { "members._id": req.user._id },
-    { "academicMembers._id": req.user._id },
-    { "participants._id": req.user._id }
+    { "register.academicZh._id": req.user._id },
+    { "register.academicEn._id": req.user._id },
+    { "register.participant._id": req.user._id },
   ]}).select("title status pinned").lean().exec((err, docs) => {
     if(err) return next(err);
     else return res.send({ confs: docs });
@@ -173,13 +174,16 @@ router.delete('/:conf(\\d+)/members/:member(\\d+)',
  * Forms and applications
  */
 
-router.post('/:conf(\\d+)/academic/form',
-  helpers.hasPerms(['form.academic.modify']),
+router.post('/:conf(\\d+)/:type/form',
+  helpers.toCamel(['type']),
+  helpers.hasPerms([(req) => 'form.' + req.params.type +'.modify']),
   helpers.hasFields(['form']),
   (req, res, next) => {
     //TODO: lint the input
     
-    Conf.findByIdAndUpdate(req.params.conf, { $set: { academicForm: JSON.stringify(req.body.form) } }).exec((err, doc) => {
+    var updateMap = {};
+    updateMap['forms.' + req.params.type] = JSON.stringify(req.body.form);
+    Conf.findByIdAndUpdate(req.params.conf, { $set: updateMap }).exec((err, doc) => {
       if(err) return next(err);
       else return res.send({
         msg: "OperationSuccessful"
@@ -187,43 +191,39 @@ router.post('/:conf(\\d+)/academic/form',
     });
 });
 
-router.post('/:conf(\\d+)/participants/form',
-  helpers.hasPerms(['form.participant.edit']),
-  helpers.hasFields(['form']),
-  (req, res, next) => {
-    Conf.findByIdAndUpdate(req.params.conf, { $set: { participantForm : JSON.stringify(req.body.form) } }).exec((err, doc) => {
-      if(err) return next(err);
-      else return res.send({
-        msg: "OperationSuccessful"
-      });
-    });
-  });
-
-router.get('/:conf(\\d+)/academic/form',
+router.get('/:conf(\\d+)/:type/form',
+  helpers.toCamel(['type']),
   helpers.loggedin,
   (req, res, next) => {
-    Conf.findById(req.params.conf).select('academicForm').lean().exec((err, doc) => {
+    Conf.findById(req.params.conf).select('forms').lean().exec((err, doc) => {
       if(err) return next(err);
-      else return res.send(doc.academicForm);
+      else if(req.params.type in doc.forms) return res.send(doc.forms[req.params.type]);
     });
   });
 
-router.post('/:conf(\\d+)/academic/:member(\\d+)',
+router.post('/:conf(\\d+)/:type/:member(\\d+)',
+  helpers.toCamel(['type']),
   helpers.loggedin,
   helpers.confExists,
-  helpers.hasPerms(['form.academic.view.modify'], (req) => req.user && req.params.member == req.user._id ),
+  helpers.hasPerms([(req) => 'form.' + req.params.type + '.modify'], (req) => req.user && req.params.member == req.user._id ),
   helpers.hasFields(['content']),
   (req, res, next) => {
-    Conf.findOneAndUpdate({
-      _id: req.params.conf,
-      'academicMembers._id': req.params.member,
-    }, {
-      'academicMembers.$.submission': JSON.stringify(req.body.content)
-    }).exec((err, doc) => {
+    var restr = {};
+    var update = {};
+    restr._id = req.params.conf;
+    restr["register." + req.params.type + "._id"] = req.params.member;
+    update["register." + req.params.type + ".$.submission"] = JSON.stringify(req.body.content);
+    Conf.findOneAndUpdate(restr, update).exec((err, doc) => {
       if(err) return next(err);
       else if(doc) return res.send({ msg: "OperationSuccessful" });
       else {
-        Conf.findByIdAndUpdate(req.params.conf, { $push: { academicMembers: { _id: req.params.member, submission: JSON.stringify(req.body.content) }}})
+        var pushSpec = {};
+        pushSpec["register." + req.params.type] = {
+          _id: req.params.member,
+          submission: JSON.stringify(req.body.content)
+        }
+
+        Conf.findByIdAndUpdate(req.params.conf, { $push: pushSpec})
           .exec((err, doc) => {
             if(err) return next(err);
             else return res.send({ msg: "OperationSuccessful" });
@@ -232,41 +232,46 @@ router.post('/:conf(\\d+)/academic/:member(\\d+)',
     });
   });
 
-router.get('/:conf(\\d+)/academic/:member(\\d+)',
-  helpers.hasPerms(['form.academic.view'], (req) => req.user && req.params.member == req.user._id ),
+router.get('/:conf(\\d+)/:type/:member(\\d+)',
+  helpers.toCamel(['type']),
+  helpers.hasPerms([(req) => 'form.' + req.params.type + '.view'], (req) => req.user && req.params.member == req.user._id ),
   (req, res, next) => {
-    Conf.findOne({
-      _id: req.params.conf,
-      'academicMembers._id': req.params.member
-    }, { 'academicMembers.$': 1 }).lean().exec((err, doc) => {
+    var restr = {};
+    var proj = {};
+    restr._id = req.params.conf;
+    restr["register." + req.params.type + "._id"] = req.params.member;
+    proj["register." + req.params.type + ".$"] = 1;
+    Conf.findOne(restr, proj).lean().exec((err, doc) => {
       if(err) return next(err);
       // If the current user is the requested user, then it's possible that the conf doesn't exist
-      else if(doc && doc.academicMembers && doc.academicMembers.length > 0) return res.send(doc.academicMembers[0]);
+      else if(doc && doc.register[req.params.type] && doc.register[req.params.type].length > 0) return res.send(doc.register[req.params.type][0]);
       else return res.send({});
     });
   });
 
-router.get('/:conf(\\d+)/academic',
+router.get('/:conf(\\d+)/:type',
+  helpers.toCamel(['type']),
   helpers.loggedin,
   helpers.confExists,
   (req, res, next) => {
-    Conf.findById(req.params.conf).select("academicMembers._id academicMembers.status").lean().exec((err, doc) => {
+    Conf.findById(req.params.conf).select("register." + req.params.type + "._id " + "register." + req.params.type + ".status").lean().exec((err, doc) => {
       if(err) return next(err);
       //TODO: check for conf status
-      else return res.send(doc.academicMembers.filter( e => e.status == 2 ));
+      else return res.send(doc.register[req.params.type].filter( e => e.status == 2 ));
     });
   });
 
-router.get('/:conf(\\d+)/academic/all',
-  helpers.hasPerms(['form.academic.view']),
+router.get('/:conf(\\d+)/:type/all',
+  helpers.toCamel(['type']),
+  helpers.hasPerms([(req) => 'form.' + req.params.type + '.view']),
   (req, res, next) => {
-    Conf.findById(req.params.conf).select("academicMembers._id academicMembers.status").lean().exec((err, doc) => {
+    Conf.findById(req.params.conf).select("register." + req.params.type + "._id " + "register." + req.params.type + ".status").lean().exec((err, doc) => {
       if(err) return next(err);
       else {
-        User.find({ _id: { $in: doc.academicMembers }}).select("email realname").lean().exec((err, users) => {
+        User.find({ _id: { $in: doc.register[req.params.type] }}).select("email realname").lean().exec((err, users) => {
           if(err) return next(err);
           else return res.send({
-            list: doc.academicMembers,
+            list: doc.register[req.params.type],
             members: users
           });
         });

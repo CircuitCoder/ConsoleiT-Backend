@@ -160,6 +160,22 @@ var defaultRoles = [{
   }
 }];
 
+var registerDesc = {
+  _id: Number,
+
+  /**
+   * Status for academic team members:
+   *
+   * 1: registered
+   * 2: assigned
+   * 3: rejected
+   */
+  status: Number,
+  submission: Number,
+  comm: Number,
+  fromGroup: {type: Number, default: -1}, // -1 indicates a individual register
+}
+
 var ConfSchema = mongoose.Schema({
   _id: Number,
   title: String,
@@ -196,17 +212,17 @@ var ConfSchema = mongoose.Schema({
     default: defaultRoles
   },
 
-  /**
-   * Forms including:
-   * Academic and Participant
-   */
-  academicForm: {
-    type: String,
-    default: '[]'
-  },
-  participantForm: {
-    type: String,
-    default: '[]'
+  forms: {
+    type: {
+      academicZh: String,
+      academicEn: String,
+      participant: String,
+    },
+    default: {
+      academicZh: "[]",
+      academicEn: "[]",
+      participant: "[]",
+    }
   },
 
   members: [{
@@ -219,28 +235,18 @@ var ConfSchema = mongoose.Schema({
     title: String
   }],
 
-  academicMembers: [{
-    _id: Number,
-    comm: Number,
-    submission: String, // Form data in JSON
-    
-    /**
-     * Status for academic team members:
-     *
-     * 1: registered
-     * 2: assigned
-     * 3: rejected
-     */
-    status: { type: Number, default: 1 },
-  }],
-
-  participants: [{
-    _id: Number,
-    fromGroup: {type: Number, default: -1}, // -1 indicates a individual register
-    comm: Number,
-    submission: String, // Form data in JSON
-    status: Number,
-  }],
+  register: {
+    type: {
+      academicZh: [registerDesc],
+      academicEn: [registerDesc],
+      participant: [registerDesc],
+    },
+    default: {
+      academicZh: [],
+      academicEn: [],
+      participant: []
+    }
+  }
 });
 
 ConfSchema.options.toObject = {

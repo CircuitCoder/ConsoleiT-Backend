@@ -1,3 +1,5 @@
+'use strict';
+
 // Helpers for routing
 
 var mongoose = require('mongoose');
@@ -108,8 +110,11 @@ module.exports.hasPerms = (perms, except) => {
         var roleId = doc.members[0].role;
         var role = doc.roles.filter( e => e._id == roleId )[0];
 
-        Promise.all(perms.map((e) => {
+        Promise.all(perms.map((_e) => {
           return (resolve, reject) => {
+            let e = _e;
+            if(typeof _e === "function") e = _e(req);
+
             var permBase = role.perm;
             var segs = e.split('.');
             for(var i = 0; i <= segs.length; ++i) {
@@ -142,3 +147,16 @@ module.exports.confExists = (req, res, next) => {
     else return res.sendStatus({ error: "NoSuchConf" });
   });
 };
+
+/**
+ * Middleware for converting one parameter from underscore to camel
+ */
+module.exports.toCamel = (names) => {
+  return (req, res, next) => {
+    names.forEach((e) => {
+      if(e in req.params) req.params[e] = req.params[e].replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+    });
+
+    next();
+  }
+}
