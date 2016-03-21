@@ -160,7 +160,7 @@ var defaultRoles = [{
   }
 }];
 
-var registerDesc = {
+var registrantDesc = {
   _id: Number,
 
   /**
@@ -169,11 +169,14 @@ var registerDesc = {
    * 1: registered
    * 2: assigned
    * 3: rejected
+   *
+   * Status for participants:
+   * TBD
    */
   status: Number,
   submission: Number,
   comm: Number,
-  fromGroup: {type: Number, default: -1}, // -1 indicates a individual register
+  fromGroup: {type: Number, default: -1}, // -1 indicates a individual registrant
 }
 
 var ConfSchema = mongoose.Schema({
@@ -235,11 +238,11 @@ var ConfSchema = mongoose.Schema({
     title: String
   }],
 
-  register: {
+  registrants: {
     type: {
-      academicZh: [registerDesc],
-      academicEn: [registerDesc],
-      participant: [registerDesc],
+      academicZh: [registrantDesc],
+      academicEn: [registrantDesc],
+      participant: [registrantDesc],
     },
     default: {
       academicZh: [],

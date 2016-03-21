@@ -220,7 +220,8 @@ router.post('/:conf(\\d+)/:type/:member(\\d+)',
         var pushSpec = {};
         pushSpec["register." + req.params.type] = {
           _id: req.params.member,
-          submission: JSON.stringify(req.body.content)
+          submission: JSON.stringify(req.body.content),
+          status: 0
         }
 
         Conf.findByIdAndUpdate(req.params.conf, { $push: pushSpec})
