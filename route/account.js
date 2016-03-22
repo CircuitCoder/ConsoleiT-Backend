@@ -35,9 +35,8 @@ function newUser(email, realname, cb) {
   });
 }
 
-router.post('/login', function(req, res, next) {
+router.post('/login', helpers.hasFields(['email', 'passwd']), helpers.toLower([], ['email']) ,function(req, res, next) {
   if(req.user) return res.send({ error: "InvalidCondition" });
-  else if(!req.body) return res.sendStatus(400);
   else {
     passport.authenticate('local', function(err, user) {
       if(err) return next(err);
@@ -55,7 +54,7 @@ router.post('/login', function(req, res, next) {
   }
 });
 
-router.post('/register', helpers.hasFields(['realname', 'email']), function(req, res, next) {
+router.post('/register', helpers.hasFields(['realname', 'email']), helpers.toLower([], ['email']), function(req, res, next) {
   User.findOne({email: req.body.email}).exec(function(err, doc) {
     if(err) return next(err);
     else if(doc) return res.send({error: 'DuplicatedEmail'});
