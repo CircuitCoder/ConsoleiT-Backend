@@ -44,9 +44,9 @@ router.get('/', helpers.loggedin, (req, res, next) => {
   Conf.find({$or: [
     { "pinned": true },
     { "members._id": req.user._id },
-    { "register.academicZh._id": req.user._id },
-    { "register.academicEn._id": req.user._id },
-    { "register.participant._id": req.user._id },
+    { "registrants.academicZh._id": req.user._id },
+    { "registrants.academicEn._id": req.user._id },
+    { "registrants.participant._id": req.user._id },
   ]}).select("title status pinned").lean().exec((err, docs) => {
     if(err) return next(err);
     else return res.send({ confs: docs });
@@ -211,14 +211,14 @@ router.post('/:conf(\\d+)/:type/:member(\\d+)',
     var restr = {};
     var update = {};
     restr._id = req.params.conf;
-    restr["register." + req.params.type + "._id"] = req.params.member;
-    update["register." + req.params.type + ".$.submission"] = JSON.stringify(req.body.content);
+    restr["registrants." + req.params.type + "._id"] = req.params.member;
+    update["registrants." + req.params.type + ".$.submission"] = JSON.stringify(req.body.content);
     Conf.findOneAndUpdate(restr, update).exec((err, doc) => {
       if(err) return next(err);
       else if(doc) return res.send({ msg: "OperationSuccessful" });
       else {
         var pushSpec = {};
-        pushSpec["register." + req.params.type] = {
+        pushSpec["registrants." + req.params.type] = {
           _id: req.params.member,
           submission: JSON.stringify(req.body.content),
           status: 0
@@ -240,12 +240,12 @@ router.get('/:conf(\\d+)/:type/:member(\\d+)',
     var restr = {};
     var proj = {};
     restr._id = req.params.conf;
-    restr["register." + req.params.type + "._id"] = req.params.member;
-    proj["register." + req.params.type + ".$"] = 1;
+    restr["registrants." + req.params.type + "._id"] = req.params.member;
+    proj["registrants." + req.params.type + ".$"] = 1;
     Conf.findOne(restr, proj).lean().exec((err, doc) => {
       if(err) return next(err);
       // If the current user is the requested user, then it's possible that the conf doesn't exist
-      else if(doc && doc.register[req.params.type] && doc.register[req.params.type].length > 0) return res.send(doc.register[req.params.type][0]);
+      else if(doc && doc.registrants[req.params.type] && doc.registrants[req.params.type].length > 0) return res.send(doc.registrants[req.params.type][0]);
       else return res.send({});
     });
   });
@@ -255,10 +255,10 @@ router.get('/:conf(\\d+)/:type',
   helpers.loggedin,
   helpers.confExists,
   (req, res, next) => {
-    Conf.findById(req.params.conf).select("register." + req.params.type + "._id " + "register." + req.params.type + ".status").lean().exec((err, doc) => {
+    Conf.findById(req.params.conf).select("registrants." + req.params.type + "._id " + "registrants." + req.params.type + ".status").lean().exec((err, doc) => {
       if(err) return next(err);
       //TODO: check for conf status
-      else return res.send(doc.register[req.params.type].filter( e => e.status == 2 ));
+      else return res.send(doc.registrants[req.params.type].filter( e => e.status == 2 ));
     });
   });
 
@@ -266,13 +266,13 @@ router.get('/:conf(\\d+)/:type/all',
   helpers.toCamel(['type']),
   helpers.hasPerms([(req) => 'form.' + req.params.type + '.view']),
   (req, res, next) => {
-    Conf.findById(req.params.conf).select("register." + req.params.type + "._id " + "register." + req.params.type + ".status").lean().exec((err, doc) => {
+    Conf.findById(req.params.conf).select("registrants." + req.params.type + "._id " + "registrants." + req.params.type + ".status").lean().exec((err, doc) => {
       if(err) return next(err);
       else {
-        User.find({ _id: { $in: doc.register[req.params.type] }}).select("email realname").lean().exec((err, users) => {
+        User.find({ _id: { $in: doc.registrants[req.params.type] }}).select("email realname").lean().exec((err, users) => {
           if(err) return next(err);
           else return res.send({
-            list: doc.register[req.params.type],
+            list: doc.registrants[req.params.type],
             members: users
           });
         });
