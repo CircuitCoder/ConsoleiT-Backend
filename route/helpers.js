@@ -153,7 +153,7 @@ module.exports.confExists = (req, res, next) => {
  */
 module.exports.toCamel = (params, fields) => {
   return (req, res, next) => {
-    names.forEach( e => {
+    params.forEach( e => {
       if(e in req.params) req.params[e] = req.params[e].replace(/-([a-z])/g, (g) => g[1].toUpperCase());
     });
 
