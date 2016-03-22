@@ -153,11 +153,11 @@ module.exports.confExists = (req, res, next) => {
  */
 module.exports.toCamel = (params, fields) => {
   return (req, res, next) => {
-    params.forEach( e => {
+    if(params) params.forEach( e => {
       if(e in req.params) req.params[e] = req.params[e].replace(/-([a-z])/g, (g) => g[1].toUpperCase());
     });
 
-    fields.forEach( e => {
+    if(fields) fields.forEach( e => {
       if(e in req.body) req.body[e] = req.body[e].replace(/-([a-z])/g, (g) => g[1].toUpperCase());
     });
 
@@ -170,11 +170,11 @@ module.exports.toCamel = (params, fields) => {
  */
 module.exports.toLower = (params, fields) => {
   return (req, res, next) => {
-    params.forEach( e => {
+    if(params) params.forEach( e => {
       if(e in req.params) req.params[e] = req.params[e].toLowerCase();
     });
 
-    fields.forEach( e => {
+    if(fields) fields.forEach( e => {
       if(e in req.body) req.body[e] = req.body[e].toLowerCase();
     });
 
