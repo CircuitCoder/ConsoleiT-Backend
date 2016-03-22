@@ -141,7 +141,12 @@ var defaultRoles = [{
   title: '学术总监',
   perm: {
     form: {
-      academic: { all: true }
+      academicZh: { all: true },
+      academicEn: { all: true }
+    },
+    registrant: {
+      academicZh: { view: true },
+      academicEn: { view: true }
     }
   }
 }, {
@@ -150,6 +155,9 @@ var defaultRoles = [{
   perm: {
     form: {
       participant: { all: true }
+    },
+    registrant: {
+      participant: { view: true }
     }
   }
 }, {

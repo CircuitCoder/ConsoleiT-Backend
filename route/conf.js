@@ -205,7 +205,7 @@ router.post('/:conf(\\d+)/:type/:member(\\d+)',
   helpers.toCamel(['type']),
   helpers.loggedin,
   helpers.confExists,
-  helpers.hasPerms([(req) => 'form.' + req.params.type + '.modify'], (req) => req.user && req.params.member == req.user._id ),
+  helpers.hasPerms([(req) => 'registrant.' + req.params.type + '.modify'], (req) => req.user && req.params.member == req.user._id ),
   helpers.hasFields(['content']),
   (req, res, next) => {
     var restr = {};
@@ -221,7 +221,7 @@ router.post('/:conf(\\d+)/:type/:member(\\d+)',
         pushSpec["registrants." + req.params.type] = {
           _id: req.params.member,
           submission: JSON.stringify(req.body.content),
-          status: 0
+          status: 1
         }
 
         Conf.findByIdAndUpdate(req.params.conf, { $push: pushSpec})
@@ -235,7 +235,7 @@ router.post('/:conf(\\d+)/:type/:member(\\d+)',
 
 router.get('/:conf(\\d+)/:type/:member(\\d+)',
   helpers.toCamel(['type']),
-  helpers.hasPerms([(req) => 'form.' + req.params.type + '.view'], (req) => req.user && req.params.member == req.user._id ),
+  helpers.hasPerms([(req) => 'registrant.' + req.params.type + '.view'], (req) => req.user && req.params.member == req.user._id ),
   (req, res, next) => {
     var restr = {};
     var proj = {};
