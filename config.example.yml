@@ -33,3 +33,18 @@ mailer:
     reset_passwd:
       title: ConsoleiT 新密码
       file: reset_passwd.html
+  images:
+    # For images, we will automatically identify the type of the image based on its extension name
+    # e.g.: image/svg_xml, image/jpg ...
+    # You can explicitly pass the content type using option 'type'
+    # Attention! Images without extension will potentially screw up the logic
+    # If you insist in doing that, specify its content type here
+    - key: console
+      file: console.svg
+    - key: bjmun
+      file: bjmun.svg
+
+# Developer options
+develope:
+  # Enable testing routes
+  testing: true

@@ -4,3 +4,5 @@ npm-debug.log
 *.sw[a-p]
 
 /config.yml
+
+.DS_Store
