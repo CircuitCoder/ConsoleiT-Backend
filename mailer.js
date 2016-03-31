@@ -15,17 +15,17 @@ var image = {}
 config.mailer.images.forEach(e => {
   var file = fs.readFileSync(`${__dirname}/mail/images/${e.file}`).toString('base64');
   var type;
-  if(e.type) type = e.type + ';';
+  if(e.type) type = e.type;
   else {
     var extension = e.file.split('.').pop();
     switch(extension) {
-      case 'svg': type = 'image/svg+xml;'; break;
-      case 'jpg': type = 'image/jpg;'; break;
-      case 'png': type = 'image/png;'; break;
-      default: type = 'image/' + extension + ';'; break;
+      case 'svg': type = 'image/svg+xml'; break;
+      case 'jpg': type = 'image/jpg'; break;
+      case 'png': type = 'image/png'; break;
+      default: type = 'image/' + extension; break;
     }
   }
-  image[e.key] = 'data:' + type + file;
+  image[e.key] = 'data:' + type + ';base64,' + file;
 });
 
 module.exports = function(id, to, data, cb) {
