@@ -11,9 +11,12 @@ function getTemplate(id) {
 }
 
 /* Get images */
-var image = {}
+var image = {
+  base64: {},
+  raw: {},
+}
 config.mailer.images.forEach(e => {
-  var file = fs.readFileSync(`${__dirname}/mail/images/${e.file}`).toString('base64');
+  var file = fs.readFileSync(`${__dirname}/mail/images/${e.file}`);
   var type;
   if(e.type) type = e.type;
   else {
@@ -25,7 +28,8 @@ config.mailer.images.forEach(e => {
       default: type = 'image/' + extension; break;
     }
   }
-  image[e.key] = 'data:' + type + ';base64,' + file;
+  image.base64[e.key] = 'data:' + type + ';base64,' + file.toString('base64');
+  image.raw[e.key] = file.toString('utf8');
 });
 
 module.exports = function(id, to, data, cb) {

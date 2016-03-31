@@ -1,22 +1,122 @@
-<img src="{{image.console}}">
-<h1>您好，{{data.realname}}</h1>
-<div>
-  感谢您注册 Console iT 平台，以下是您的密码<br>
-  <pre style="padding: 10px 20px; border: #DDD 1px solid; text-align: center; background-color: #EEE; border-radius: 2px">{{data.passwd}}</pre>
-  您可以在账户设置页面更改密码<br>
 
-  <hr>
+<style>
+.container {
+  margin: 40px auto;
+  width: 550px;
+  border-radius: 5px;
+  box-shadow: rgba(0,0,0,.54) 0 4px 6px;
+  overflow: hidden;
+  min-height: 500px;
+  padding-bottom: 60px;
+  position: relative;
+}
 
-  目前平台尚在开发过程中，如果您在使用过程中遇到漏洞或者有功能建议，请<a href="https://github.com/CircuitCoder/ConsoleiT-Frontend/issues">点击此处</a>前往 Github 项目页面提交 Issue ，或者直接通过邮件联系开发者：liuxiaoyi@bjmun.org<br>
+.header {
+  height: 42px;
+  background-color: rgb(33, 150, 243);
+  padding: 42px 0;
+  text-align: center;
+}
 
-  感谢您的支持
+.header > svg {
+  margin: 0 auto;
+  height: 42px;
+  fill: white;
+}
 
-  <hr>
+.body {
+  font-family: MicrosoftYaHei, "Hiragino Sans GB";
+  padding: 40px;
+}
 
-  <strong>
-    北京市高中生模拟联合国协会|Beijing Model United Nations Association for High School Students<br><br>
-    Website: BJMUN.org<br>
-    Mail: official@bjmun.org<br>
-    Wechat: beijingbjmun<br>
-  </strong>
+.body > h1 {
+  margin: 0 0 40px 0;
+  font-size: 36px;
+  line-height: 40px;
+  font-weight: normal;
+}
+
+.body > h2 {
+  margin: 0 0 40px 0;
+  font-size: 24px;
+  line-height: 28px;
+  font-weight: normal;
+}
+
+.body > p {
+  margin: 0 0 40px 0;
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: normal;
+}
+
+.body > pre {
+  margin: 0 0 40px 0;
+  font-size: 14px;
+  line-height: 32px;
+  text-align: center;
+  font-weight: bold;
+  border-radius: 2px;
+  background: #EEE;
+  border: #DDD 1px solid;
+}
+
+.body > .footer {
+  font-size: 14px;
+  line-height: 18px;
+  position: absolute;
+  left: 0;
+  bottom: 40px;
+  right: 0;
+
+  text-align: center;
+  color: rgba(0,0,0,.70);
+}
+
+.body > .footer a {
+  text-decoration: none;
+  color: rgba(0,0,0,.70);
+}
+
+.extra {
+  font-family: MicrosoftYaHei, "Hiragino Sans GB";
+  text-align: center;
+  margin-top: 40px;
+  color: rgba(0,0,0,.54);
+  font-size: 14px;
+  line-height: 24px;
+}
+
+.extra svg {
+  height: 56px;
+  fill: rgba(0,0,0,.54);
+}
+</style>
+<div class="container">
+  <div class="header">
+    {{{image.raw.console}}}
+  </div>
+  <div class="body">
+    <h1>您好，{{data.realname}}</h1>
+    <p>感谢您注册 Console iT 平台，以下是您的密码</p>
+    <pre>{{data.passwd}}</pre>
+    <p>您可以在账户设置页面更改密码</p>
+
+    <div class="footer">
+      <a href="https://bjmun.org">BJMUN官网</a>
+      &middot;
+      <a href="https://console.bjmun.org">Console iT</a>
+      &middot;
+      <a href="https://bjmun.org/console-it/client">Console iT Client</a>
+      &middot;
+      <a href="https://wiki.bjmun.org">MUNWiki</a>
+    </div>
+  </div>
+</div>
+
+<div class="extra">
+  {{{image.raw.bjmun}}}<br>
+
+  北京市高中生模拟联合国协会<br>
+  Beijing Model United Nations Association for High School Students<br>
 </div>
