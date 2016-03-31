@@ -4,6 +4,10 @@ webserver:
     - 'http://YOUR_DOMAIN_HERE'
     - '/\.REGEXP\.com$/'
 
+url: 
+  frontend: "URL of your frontend website"
+  backend: "URL of your backend server"
+
 db:
   uri: "mongodb://localhost/consoleit"
 
@@ -18,8 +22,14 @@ mailer:
       user: "Your mail address here"
       pass: "Your password here"
   defaults:
-    from: "Your title"
+    from: "Your title <Your email address>"
   tmpls:
     new_user:
-      title: "ConsoleiT 注册邮件"
-      file: "new_user.html"
+      title: ConsoleiT 注册邮件
+      file: new_user.html
+    reset_passwd_request:
+      title: ConsoleiT 密码重置请求
+      file: reset_passwd_request.html
+    reset_passwd:
+      title: ConsoleiT 新密码
+      file: reset_passwd.html

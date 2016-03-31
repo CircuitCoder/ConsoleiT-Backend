@@ -9,11 +9,12 @@ var Counter = mongoose.model('Counter');
 
 var passport = require('passport');
 var mailer = require('../mailer');
+var config = require('../config');
 
 var helpers = require('./helpers');
 
 function newUser(email, realname, cb) {
-  Counter.getNext("user", function(err, id) {
+  Counter.getNext("user", (err, id) => {
     if(err) return cb(err, null);
 
     var user = new User({
@@ -23,7 +24,7 @@ function newUser(email, realname, cb) {
       isRoot: (id == 1) // The first registered user is root for default
     });
     var passwd = user.initPasswd();
-    user.save(function(err, doc) {
+    user.save((err, doc) => {
       if(err) {
         if(err.code == 11000) {
           // Duplicated key
@@ -35,14 +36,14 @@ function newUser(email, realname, cb) {
   });
 }
 
-router.post('/login', helpers.hasFields(['email', 'passwd']), helpers.toLower(null, ['email']) ,function(req, res, next) {
+router.post('/login', helpers.hasFields(['email', 'passwd']), helpers.toLower(null, ['email']) ,(req, res, next) => {
   if(req.user) return res.send({ error: "InvalidCondition" });
   else {
-    passport.authenticate('local', function(err, user) {
+    passport.authenticate('local', (err, user) => {
       if(err) return next(err);
       else if(!user) return res.send({error: 'CredentialRejected'});
       else {
-        req.login(user, function(err) {
+        req.login(user, (err) => {
           if(err) {
             return next(err);
           } else {
@@ -54,8 +55,8 @@ router.post('/login', helpers.hasFields(['email', 'passwd']), helpers.toLower(nu
   }
 });
 
-router.post('/register', helpers.hasFields(['realname', 'email']), helpers.toLower(null, ['email']), function(req, res, next) {
-  User.findOne({email: req.body.email}).exec(function(err, doc) {
+router.post('/register', helpers.hasFields(['realname', 'email']), helpers.toLower(null, ['email']), (req, res, next) => {
+  User.findOne({email: req.body.email}).exec((err, doc) => {
     if(err) return next(err);
     else if(doc) return res.send({error: 'DuplicatedEmail'});
     else {
@@ -65,7 +66,7 @@ router.post('/register', helpers.hasFields(['realname', 'email']), helpers.toLow
           mailer('new_user', req.body.email, {
             realname: req.body.realname,
             passwd: passwd
-          }, function(err, info) {
+          }, (err, info) => {
             if(err) return next(err);
             else return res.send({
               msg: "RegisterationEmailSent"
@@ -81,7 +82,7 @@ router.post('/register', helpers.hasFields(['realname', 'email']), helpers.toLow
   });
 });
 
-router.get('/logout', function(req, res, next) {
+router.get('/logout', (req, res, next) => {
   if(!req.user) return res.send({ error: "InvalidCondition" });
   else {
     req.logout();
@@ -91,7 +92,7 @@ router.get('/logout', function(req, res, next) {
   }
 });
 
-router.get('/restore', function(req, res, next) {
+router.get('/restore', (req, res, next) => {
   if(req.user) {
     res.send({ user: req.user })
   } else {
@@ -99,7 +100,7 @@ router.get('/restore', function(req, res, next) {
   }
 });
 
-router.post('/settings/passwd', helpers.loggedin, helpers.hasFields(['passwd', 'oripasswd']), function(req, res, next) {
+router.post('/settings/passwd', helpers.loggedin, helpers.hasFields(['passwd', 'oripasswd']), (req, res, next) => {
   User.findById(req.user._id).exec((err, doc) => {
     if(err) return next(err);
     else if(!doc) return res.sendStatus(500);
@@ -114,6 +115,49 @@ router.post('/settings/passwd', helpers.loggedin, helpers.hasFields(['passwd', '
       } else {
         return res.send({ error: "PasswdMismatch" });
       }
+    }
+  });
+});
+
+router.post('/settings/passwd/reset/request', helpers.hasFields(['email']), (req, res, next) => {
+  User.findOne({
+    email: req.body.email
+  }).exec((err, doc) => {
+    if(err) return next(err);
+    else if(!doc) return res.send({ error: "NoSuchUser" });
+    else {
+      var token = doc.generateToken();
+      doc.save();
+
+      mailer('reset_passwd_request', req.body.email, {
+        realname: doc.realname,
+        url: config.url.backend + '/account/settings/passwd/reset/' + doc._id + '/' + token,
+      }, (err, info) => {
+        if(err) return next(err);
+        else return res.send({
+          msg: "ResetPasswdRequestEmailSent"
+        });
+      });
+    }
+  });
+});
+
+router.get('/settings/passwd/reset/:id(\\d+)/:token', (req, res, next) => {
+  User.findById(req.params.id).exec((err, doc) => {
+    if(err) return next(err);
+    else if(!doc) return res.send({ error: "NoSuchUser" });
+    else {
+      if(doc.validateToken(req.params.token)) {
+        var passwd = doc.initPasswd();
+        doc.save();
+        mailer('reset_passwd', doc.email, {
+          realname: doc.realname,
+          passwd: passwd
+        }, (err, info) => {
+          if(err) return next(err);
+          else return res.redirect(config.url.frontend + '/login?msg=resetSent');
+        });
+      } else res.sendStatus(403);
     }
   });
 });

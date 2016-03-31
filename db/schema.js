@@ -77,6 +77,7 @@ var UserSchema = mongoose.Schema({
   email: String,
   passwd: String,
   realname: String,
+  resetToken: String,
   isRoot: Boolean,
 });
 
@@ -97,6 +98,19 @@ UserSchema.methods.initPasswd = function() {
   var token = crypto.randomBytes(16).toString('hex');
   this.setPasswd(token);
   return token;
+}
+
+UserSchema.methods.generateToken = function() {
+  var token = crypto.randomBytes(48).toString('hex');
+  this.resetToken = token;
+  return token;
+}
+
+UserSchema.methods.validateToken = function(token) {
+  if(this.resetToken && this.resetToken == token) {
+    this.resetToken = undefined;
+    return true;
+  } else return false;
 }
 
 UserSchema.options.toObject = {
