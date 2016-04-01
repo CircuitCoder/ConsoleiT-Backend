@@ -5,8 +5,6 @@
   border-radius: 5px;
   box-shadow: rgba(0,0,0,.54) 0 4px 6px;
   overflow: hidden;
-  min-height: 500px;
-  padding-bottom: 60px;
   position: relative;
 }
 
@@ -17,10 +15,9 @@
   text-align: center;
 }
 
-.header > svg {
+.header > img {
   margin: 0 auto;
   height: 42px;
-  fill: white;
 }
 
 .body {
@@ -61,12 +58,9 @@
 }
 
 .body > .footer {
+  margin-top: 64px;
   font-size: 14px;
   line-height: 18px;
-  position: absolute;
-  left: 0;
-  bottom: 40px;
-  right: 0;
 
   text-align: center;
   color: rgba(0,0,0,.70);
@@ -86,14 +80,19 @@
   line-height: 24px;
 }
 
-.extra svg {
+.extra img {
   height: 56px;
-  fill: rgba(0,0,0,.54);
+  opacity: .54;
+  margin-bottom: 12px;
+}
+
+.placeholder {
+  opacity: 0;
 }
 </style>
 <div class="container">
   <div class="header">
-    {{{image.raw.console}}}
+    <img src="{{{image.base64.console}}}">
   </div>
   <div class="body">
     <h1>您好，{{data.realname}}</h1>
@@ -114,8 +113,9 @@
 </div>
 
 <div class="extra">
-  {{{image.raw.bjmun}}}<br>
+  <img src="{{{image.base64.bjmun}}}"><br>
 
   北京市高中生模拟联合国协会<br>
   Beijing Model United Nations Association for High School Students<br>
 </div>
+<div class="placeholder">{{{extra.placeholder}}}</div>
