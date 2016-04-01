@@ -1,15 +1,121 @@
-<h1>您好，{{data.realname}}</h1>
-<div>
-  以下为您的新密码：
-  <pre style="padding: 10px 20px; border: #DDD 1px solid; text-align: center; background-color: #EEE; border-radius: 2px">{{data.passwd}}</pre>
-   依旧，您可以在账户设置页面更改密码。<br>
+<style>
+.container {
+  margin: 40px auto;
+  width: 550px;
+  border-radius: 5px;
+  box-shadow: rgba(0,0,0,.54) 0 4px 6px;
+  overflow: hidden;
+  min-height: 500px;
+  padding-bottom: 60px;
+  position: relative;
+}
 
-  <hr>
+.header {
+  height: 42px;
+  background-color: rgb(33, 150, 243);
+  padding: 42px 0;
+  text-align: center;
+}
 
-  <strong>
-    北京市高中生模拟联合国协会|Beijing Model United Nations Association for High School Students<br><br>
-    Website: BJMUN.org<br>
-    Mail: official@bjmun.org<br>
-    Wechat: beijingbjmun<br>
-  </strong>
+.header > svg {
+  margin: 0 auto;
+  height: 42px;
+  fill: white;
+}
+
+.body {
+  font-family: MicrosoftYaHei, "Hiragino Sans GB";
+  padding: 40px;
+}
+
+.body > h1 {
+  margin: 0 0 40px 0;
+  font-size: 36px;
+  line-height: 40px;
+  font-weight: normal;
+}
+
+.body > h2 {
+  margin: 0 0 40px 0;
+  font-size: 24px;
+  line-height: 28px;
+  font-weight: normal;
+}
+
+.body > p {
+  margin: 0 0 40px 0;
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: normal;
+}
+
+.body > pre {
+  margin: 0 0 40px 0;
+  font-size: 14px;
+  line-height: 32px;
+  text-align: center;
+  font-weight: bold;
+  border-radius: 2px;
+  background: #EEE;
+  border: #DDD 1px solid;
+}
+
+.body > .footer {
+  font-size: 14px;
+  line-height: 18px;
+  position: absolute;
+  left: 0;
+  bottom: 40px;
+  right: 0;
+
+  text-align: center;
+  color: rgba(0,0,0,.70);
+}
+
+.body > .footer a {
+  text-decoration: none;
+  color: rgba(0,0,0,.70);
+}
+
+.extra {
+  font-family: MicrosoftYaHei, "Hiragino Sans GB";
+  text-align: center;
+  margin-top: 40px;
+  color: rgba(0,0,0,.54);
+  font-size: 14px;
+  line-height: 24px;
+}
+
+.extra svg {
+  height: 56px;
+  fill: rgba(0,0,0,.54);
+}
+</style>
+<div class="container">
+  <div class="header">
+    {{{image.raw.console}}}
+  </div>
+  <div class="body">
+    <h1>您好，{{data.realname}}</h1>
+    <p>以下为您的新密码：</p>
+    <pre>{{data.passwd}}</pre>
+    <p>依旧，您可以在账户设置页面更改密码。</p>
+
+    <div class="footer">
+      <a href="https://bjmun.org">BJMUN官网</a>
+      &middot;
+      <a href="https://console.bjmun.org">Console iT</a>
+      &middot;
+      <a href="https://bjmun.org/console-it/client">Console iT Client</a>
+      &middot;
+      <a href="https://wiki.bjmun.org">MUNWiki</a>
+    </div>
+  </div>
+</div>
+
+<div class="extra">
+  {{{image.raw.bjmun}}}<br>
+
+  北京市高中生模拟联合国协会<br>
+  Beijing Model United Nations Association for High School Students<br>
 </div>
