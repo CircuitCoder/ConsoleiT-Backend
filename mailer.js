@@ -3,6 +3,7 @@ var config = require('./config');
 var mustache = require('mustache');
 var fs = require('fs');
 var crypto = require('crypto');
+var juice = require('juice');
 
 var transporter = nodemailer.createTransport(config.mailer.transport, config.mailer.defaults);
 
@@ -35,7 +36,7 @@ config.mailer.images.forEach(e => {
 module.exports = function(id, to, data, cb) {
   if(!id in config.mailer.tmpls) return cb("No such template");
   else {
-    var content = mustache.render(getTemplate(id), {data, image});
+    var content = juice(mustache.render(getTemplate(id), {data, image}));
     if(to) // For testing
       transporter.sendMail({
         to: to,

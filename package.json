@@ -23,6 +23,7 @@
     "express": "^4.13.4",
     "express-session": "^1.13.0",
     "js-yaml": "^3.5.3",
+    "juice": "^1.10.0",
     "mongoose": "^4.4.5",
     "mustache": "^2.2.1",
     "nodemailer": "^2.2.1",
