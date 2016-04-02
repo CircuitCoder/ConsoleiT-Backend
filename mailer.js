@@ -36,10 +36,7 @@ config.mailer.images.forEach(e => {
 module.exports = function(id, to, data, cb) {
   if(!id in config.mailer.tmpls) return cb("No such template");
   else {
-    var extra = {
-      placeholder: crypto.randomBytes(16).toString("base64")
-    }
-    var content = juice(mustache.render(getTemplate(id), {data, image, extra}));
+    var content = juice(mustache.render(getTemplate(id), {data, image}));
     if(to) // For testing
       transporter.sendMail({
         to: to,

@@ -1,9 +1,12 @@
 <style>
 .container {
-  margin: 40px auto;
+  margin-top: 40px;
+  margin-bottom: 40px;
+  margin-left: auto;
+  margin-right: auto;
   width: 550px;
   border-radius: 5px;
-  box-shadow: rgba(0,0,0,.36) 0 4px 6px;
+  box-shadow: #CCC 0 4px 6px;
   overflow: hidden;
   position: relative;
 }
@@ -16,8 +19,21 @@
 }
 
 .header > img {
-  margin: 0 auto;
   height: 42px;
+  display: inline-block;
+}
+
+.header > .alt {
+  height: 0px;
+  max-height: 0px;
+  min-height: 0px;
+  color: white;
+  font-family: sans-serif;
+  font-size: 42px;
+  line-height: 42px;
+  display: none;
+  text-align: center;
+  opacity: 0;
 }
 
 .body {
@@ -65,19 +81,19 @@
   line-height: 18px;
 
   text-align: center;
-  color: rgba(0,0,0,.70);
+  color: #999;
 }
 
 .body > .footer a {
   text-decoration: none;
-  color: rgba(0,0,0,.70);
+  color: #999;
 }
 
 .extra {
   font-family: MicrosoftYaHei, "Hiragino Sans GB";
   text-align: center;
   margin-top: 40px;
-  color: rgba(0,0,0,.54);
+  color: #AAA;
   font-size: 14px;
   line-height: 24px;
 }
@@ -89,11 +105,17 @@
 }
 
 .placeholder {
+  width: 0;
+  overflow: hidden;
+  float: left;
+  display: none;
+  color: rgba(0,0,0,0);
   opacity: 0;
 }
 </style>
 <div class="container">
   <div class="header">
+    <div class="alt">Console iT</div>
     <img src="{{{image.base64.console}}}">
   </div>
   <div class="body">
@@ -120,4 +142,3 @@
   北京市高中生模拟联合国协会<br>
   Beijing Model United Nations Association for High School Students<br>
 </div>
-<div class="placeholder">{{{extra.placeholder}}}</div>
