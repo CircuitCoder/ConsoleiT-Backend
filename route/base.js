@@ -12,7 +12,7 @@ router.use('/account', account);
 router.use('/group', group);
 router.use('/conf', conf);
 
-if(config.develope.testing) router.use('/testing', testing);
+if(config.develop.testing) router.use('/testing', testing);
 
 router.use('/', function(req, res, next) {
   res.sendStatus(404);

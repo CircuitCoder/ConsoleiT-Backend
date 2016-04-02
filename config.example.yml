@@ -45,6 +45,6 @@ mailer:
       file: bjmun.svg
 
 # Developer options
-develope:
+develop:
   # Enable testing routes
   testing: true
