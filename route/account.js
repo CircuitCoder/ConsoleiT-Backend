@@ -155,7 +155,7 @@ router.get('/settings/passwd/reset/:id(\\d+)/:token', (req, res, next) => {
           passwd: passwd
         }, (err, info) => {
           if(err) return next(err);
-          else return res.redirect(config.url.frontend + '/login?msg=resetSent');
+          else return res.redirect(config.url.frontend + '/login?msg=ResetSent');
         });
       } else res.sendStatus(403);
     }
