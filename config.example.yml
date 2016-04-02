@@ -40,9 +40,9 @@ mailer:
     # Attention! Images without extension will potentially screw up the logic
     # If you insist in doing that, specify its content type here
     - key: console
-      file: console.svg
+      file: console.png
     - key: bjmun
-      file: bjmun.svg
+      file: bjmun.png
 
 # Developer options
 develope:
