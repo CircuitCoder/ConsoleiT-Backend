@@ -14,6 +14,9 @@ router.use('/conf', conf);
 
 if(config.develop.testing) router.use('/testing', testing);
 
+router.get('/generate_204', function(req, res, next) {
+  res.status(204).send("ConsoleiT API up and running.");
+})
 router.use('/', function(req, res, next) {
   res.sendStatus(404);
 });
