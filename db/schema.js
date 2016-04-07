@@ -199,6 +199,7 @@ var registrantDesc = {
   submission: Number,
   comm: Number,
   fromGroup: {type: Number, default: -1}, // -1 indicates a individual registrant
+  locked: {type: Boolean, default: false},
 }
 
 var ConfSchema = mongoose.Schema({

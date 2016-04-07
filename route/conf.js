@@ -205,13 +205,19 @@ router.post('/:conf(\\d+)/:type/:member(\\d+)',
   helpers.toCamel(['type']),
   helpers.loggedin,
   helpers.confExists,
-  helpers.hasPerms([(req) => `registrant.${req.params.type}.modify`], (req) => req.user && req.params.member == req.user._id ),
+  helpers.hasPerms([(req) => `registrant.${req.params.type}.modify`], (req) => {
+    if(req.user && req.params.member == req.user._id) {
+      req.isSelf = true;
+      return true;
+    } else return false;
+  }),
   helpers.hasFields(['content']),
   (req, res, next) => {
     var restr = {};
     var update = {};
     restr._id = req.params.conf;
-    restr[`registrants.${req.params.type}._id`] = req.params.member;
+    if(req.isSelf) restr[`registrants.${req.params.type}`] = { $elemMatch: { _id: req.params.member, locked: { $in: [null, false] } } };
+    else restr[`registrants.${req.params.type}._id`] = req.params.member;
     update[`registrants.${req.params.type}.$.submission`] = JSON.stringify(req.body.content);
     Conf.findOneAndUpdate(restr, update).exec((err, doc) => {
       if(err) return next(err);
@@ -224,10 +230,16 @@ router.post('/:conf(\\d+)/:type/:member(\\d+)',
           status: 1
         }
 
-        Conf.findByIdAndUpdate(req.params.conf, { $push: pushSpec})
+        var pushRestr = {
+          _id: req.params.conf,
+        }
+        pushRestr[`registrants.${req.params.type}._id`] = { $ne: req.params.member };
+
+        Conf.findOneAndUpdate(pushRestr, { $push: pushSpec})
           .exec((err, doc) => {
             if(err) return next(err);
-            else return res.send({ msg: "OperationSuccessful" });
+            else if(doc) return res.send({ msg: "OperationSuccessful" });
+            else return res.send({ error: "DocumentLocked" }); // Already has the document, and it's locked
           });
       }
     });
@@ -250,6 +262,53 @@ router.get('/:conf(\\d+)/:type/:member(\\d+)',
     });
   });
 
+router.put('/:conf(\\d+)/:type/:member(\\d+)/lock',
+  helpers.toCamel(['type']),
+  helpers.hasPerms([(req) => `registrant.${req.params.type}.admin`]),
+  (req, res, next) => {
+    var restr = {};
+    var update = {};
+    restr._id = req.params.conf;
+    restr[`registrants.${req.params.type}._id`] = req.params.member;
+    update[`registrants.${req.params.type}.$.locked`] = true;
+    Conf.findOneAndUpdate(restr, update).exec((err, doc) => {
+      if(err) return next(err);
+      else return res.send({ msg: "OperationSuccessful" });
+    });
+  })
+
+router.delete('/:conf(\\d+)/:type/:member(\\d+)/lock',
+  helpers.toCamel(['type']),
+  helpers.hasPerms([(req) => `registrant.${req.params.type}.admin`]),
+  (req, res, next) => {
+    var restr = {};
+    var update = {};
+    restr._id = req.params.conf;
+    restr[`registrants.${req.params.type}._id`] = req.params.member;
+    update[`registrants.${req.params.type}.$.locked`] = false;
+    Conf.findOneAndUpdate(restr, update).exec((err, doc) => {
+      if(err) return next(err);
+      else return res.send({ msg: "OperationSuccessful" });
+    });
+  })
+
+router.delete('/:conf(\\d+)/:type/:member(\\d+)',
+  helpers.toCamel(['type']),
+  helpers.root,
+  (req, res, next) => {
+    var update = {
+      $pull: { }
+    }
+
+    update['$pull'][`registrants.${req.params.type}`] = { id: req.params.member };
+
+    Conf.findByIdAndUpdate(req.params.conf, update).exec((err, doc) => {
+      if(err) return next(err);
+      else return res.send({ msg: "OperationSuccessful" });
+    });
+  })
+
+
 router.get('/:conf(\\d+)/:type',
   helpers.toCamel(['type']),
   helpers.loggedin,
@@ -266,7 +325,7 @@ router.get('/:conf(\\d+)/:type/all',
   helpers.toCamel(['type']),
   helpers.hasPerms([(req) => `form.${req.params.type}.view`]),
   (req, res, next) => {
-    Conf.findById(req.params.conf).select(`registrants.${req.params.type}._id registrants.${req.params.type}.status`).lean().exec((err, doc) => {
+    Conf.findById(req.params.conf).select(`registrants.${req.params.type}._id registrants.${req.params.type}.status registrants.${req.params.type}.locked`).lean().exec((err, doc) => {
       if(err) return next(err);
       else {
         User.find({ _id: { $in: doc.registrants[req.params.type] }}).select("email realname").lean().exec((err, users) => {
