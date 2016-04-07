@@ -1,4 +1,4 @@
-var mongoose = require('mongoose');
+﻿var mongoose = require('mongoose');
 var config = require('../config');
 var crypto = require('crypto');
 
@@ -79,6 +79,30 @@ var UserSchema = mongoose.Schema({
   realname: String,
   resetToken: String,
   isRoot: Boolean,
+  /* Personal info */
+  gender: Boolean,
+  phone: String,
+  qq: Number,
+  /**
+   * Type of identification document 
+   * (this is considering about users who don't have a Chinese National ID):
+   * 1: National ID
+   * 2: Passport
+   * 3: Home Return Permit (HK/Macao) or Taiwan compatriot permit
+   */
+  typeID: Number,
+  numberID: String,
+  /**
+   * Type of school:
+   * 1: Junior high (Secondary school, middle school)
+   * 2: High school (Senior high)
+   * 3: University
+   * 4: others (does not calculate grade)
+   */
+  typeSchool: Number,
+  school: String,
+  yearEnrolled: Number, //Grade is calculated
+  experiences: [Number],
 });
 
 UserSchema.methods.validatePasswd = function(passwd) {
@@ -280,3 +304,30 @@ ConfSchema.options.toObject = {
 }
 
 mongoose.model('Conf', ConfSchema);
+
+/* Conference Experience */ 
+ 
+var ExperienceSchema = mongoose.Schema({ 
+  _id: Number, 
+  title: String, 
+  /**
+   * Level for conference experience:
+   * 1: International
+   * 2: National
+   * 3: Provincial
+   * 4: Municipal (city)
+   * 5: Discrict/County
+   * 6: Interscholar
+   * 7: Internal (school)
+   */
+  level: Number, 
+  Mark : String, 
+  resetToken: String, 
+  isRoot: Boolean, 
+}); 
+
+ExperienceSchema.options.toObject = {
+  versionKey: false
+}
+
+mongoose.model('Experience', ExperienceSchema);
