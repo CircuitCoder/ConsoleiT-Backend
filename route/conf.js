@@ -317,7 +317,8 @@ router.get('/:conf(\\d+)/:type',
     Conf.findById(req.params.conf).select(`registrants.${req.params.type}._id registrants.${req.params.type}.status`).lean().exec((err, doc) => {
       if(err) return next(err);
       //TODO: check for conf status
-      else return res.send(doc.registrants[req.params.type].filter( e => e.status == 2 ));
+      else if(req.params.type in doc.registrants) return res.send(doc.registrants[req.params.type].filter( e => e.status == 2 ));
+      else return res.sendStatus(404);
     });
   });
 
