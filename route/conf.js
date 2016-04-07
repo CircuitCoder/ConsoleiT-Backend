@@ -205,14 +205,14 @@ router.post('/:conf(\\d+)/:type/:member(\\d+)',
   helpers.toCamel(['type']),
   helpers.loggedin,
   helpers.confExists,
-  helpers.hasPerms([(req) => 'registrant.' + req.params.type + '.modify'], (req) => req.user && req.params.member == req.user._id ),
+  helpers.hasPerms([(req) => `registrant.${req.params.type}.modify`], (req) => req.user && req.params.member == req.user._id ),
   helpers.hasFields(['content']),
   (req, res, next) => {
     var restr = {};
     var update = {};
     restr._id = req.params.conf;
-    restr["registrants." + req.params.type + "._id"] = req.params.member;
-    update["registrants." + req.params.type + ".$.submission"] = JSON.stringify(req.body.content);
+    restr[`registrants.${req.params.type}._id`] = req.params.member;
+    update[`registrants.${req.params.type}.$.submission`] = JSON.stringify(req.body.content);
     Conf.findOneAndUpdate(restr, update).exec((err, doc) => {
       if(err) return next(err);
       else if(doc) return res.send({ msg: "OperationSuccessful" });
@@ -235,13 +235,13 @@ router.post('/:conf(\\d+)/:type/:member(\\d+)',
 
 router.get('/:conf(\\d+)/:type/:member(\\d+)',
   helpers.toCamel(['type']),
-  helpers.hasPerms([(req) => 'registrant.' + req.params.type + '.view'], (req) => req.user && req.params.member == req.user._id ),
+  helpers.hasPerms([(req) => `registrant.${req.params.type}.view`], (req) => req.user && req.params.member == req.user._id ),
   (req, res, next) => {
     var restr = {};
     var proj = {};
     restr._id = req.params.conf;
-    restr["registrants." + req.params.type + "._id"] = req.params.member;
-    proj["registrants." + req.params.type + ".$"] = 1;
+    restr[`registrants.${req.params.type}._id`] = req.params.member;
+    proj[`registrants.${req.params.type}.$`] = 1;
     Conf.findOne(restr, proj).lean().exec((err, doc) => {
       if(err) return next(err);
       // If the current user is the requested user, then it's possible that the conf doesn't exist
@@ -255,7 +255,7 @@ router.get('/:conf(\\d+)/:type',
   helpers.loggedin,
   helpers.confExists,
   (req, res, next) => {
-    Conf.findById(req.params.conf).select("registrants." + req.params.type + "._id " + "registrants." + req.params.type + ".status").lean().exec((err, doc) => {
+    Conf.findById(req.params.conf).select(`registrants.${req.params.type}._id registrants.${req.params.type}.status`).lean().exec((err, doc) => {
       if(err) return next(err);
       //TODO: check for conf status
       else return res.send(doc.registrants[req.params.type].filter( e => e.status == 2 ));
@@ -264,9 +264,9 @@ router.get('/:conf(\\d+)/:type',
 
 router.get('/:conf(\\d+)/:type/all',
   helpers.toCamel(['type']),
-  helpers.hasPerms([(req) => 'form.' + req.params.type + '.view']),
+  helpers.hasPerms([(req) => `form.${req.params.type}.view`]),
   (req, res, next) => {
-    Conf.findById(req.params.conf).select("registrants." + req.params.type + "._id " + "registrants." + req.params.type + ".status").lean().exec((err, doc) => {
+    Conf.findById(req.params.conf).select(`registrants.${req.params.type}._id registrants.${req.params.type}.status`).lean().exec((err, doc) => {
       if(err) return next(err);
       else {
         User.find({ _id: { $in: doc.registrants[req.params.type] }}).select("email realname").lean().exec((err, users) => {
