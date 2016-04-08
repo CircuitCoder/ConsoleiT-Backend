@@ -214,9 +214,13 @@ var ConfSchema = mongoose.Schema({
      * 0 Initialized
      *
      * 1 Academic registeration in process
-     * 2 Pending applicants registeration
-     * 3 Pending academic tests
-     * 4 Before conference
+     * 2 Academic registeration finished
+     * 3 Pending applicants registeration
+     * 4 Applicants registeration finished
+     * 5 Waiting for payment
+     * 6 Pending academic tests
+     * 7 Pending assignment
+     * 8 Before conference
      *
      * -1 Conference finished
      * -2 Conference abandoned
@@ -278,6 +282,22 @@ var ConfSchema = mongoose.Schema({
 ConfSchema.options.toObject = {
   versionKey: false
 }
+
+ConfSchema.statics.FORMS = [
+  {
+    route: 'academic-zh',
+    db: 'academicZh',
+    stage: [1],
+  }, {
+    route: 'academic-en',
+    db: 'academicEn',
+    stage: [1],
+  }, {
+    route: 'participant',
+    db: 'participant',
+    stage: [3],
+  }
+];
 
 mongoose.model('Conf', ConfSchema);
 

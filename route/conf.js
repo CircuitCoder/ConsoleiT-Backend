@@ -82,7 +82,7 @@ router.post('/', helpers.hasFields(['title', 'group']), helpers.groupOwner, (req
  */
 
 router.get('/:conf(\\d+)', helpers.loggedin, (req, res, next) => {
-  Conf.findById(req.params.conf).select("title desc group members roles status").lean().exec((err, conf) => {
+  Conf.findById(req.params.conf).select("title desc group members roles status " + Conf.FORMS.map((e) => `registrants.${e.db}._id`).join(' ')).lean().exec((err, conf) => {
     if(err) return next(err);
     else {
       Promise.all([
@@ -97,15 +97,25 @@ router.get('/:conf(\\d+)', helpers.loggedin, (req, res, next) => {
             if(err) reject(err);
             else resolve(group);
           });
-        })
+        }),
       ]).then((results) => {
-        res.send({
+        var forms = Conf.FORMS.filter((e) => {
+          var flag = false;
+          for(var i = 0; !flag && i<conf.registrants[e.db].length; ++i)
+            if(conf.registrants[e.db][i]._id == req.user._id)
+              flag = true;
+          return flag;
+        }).map((e) => e.route);
+        return res.send({
           conf: conf,
           members: results[0],
-          group: results[1]
+          group: results[1],
+          forms: forms
         });
       }, (reason) => {
-        next(reason);
+        return next(reason);
+      }).catch((e) => {
+        return next(e);
       });
     }
   });
@@ -213,34 +223,43 @@ router.post('/:conf(\\d+)/:type/:member(\\d+)',
   }),
   helpers.hasFields(['content']),
   (req, res, next) => {
-    var restr = {};
-    var update = {};
-    restr._id = req.params.conf;
-    if(req.isSelf) restr[`registrants.${req.params.type}`] = { $elemMatch: { _id: req.params.member, locked: { $in: [null, false] } } };
-    else restr[`registrants.${req.params.type}._id`] = req.params.member;
-    update[`registrants.${req.params.type}.$.submission`] = JSON.stringify(req.body.content);
-    Conf.findOneAndUpdate(restr, update).exec((err, doc) => {
+    var target = Conf.FORMS.filter((e) => e.db == req.params.type);
+    if(target.length == 0) return res.send({ error: "NoSuchForm" });
+
+    Conf.findById(req.params.conf).select(`status registrants.${req.params.type}._id registrants.${req.params.type}.locked`).exec((err, doc) => {
       if(err) return next(err);
-      else if(doc) return res.send({ msg: "OperationSuccessful" });
-      else {
-        var pushSpec = {};
-        pushSpec["registrants." + req.params.type] = {
-          _id: req.params.member,
-          submission: JSON.stringify(req.body.content),
-          status: 1
-        }
+      else if(doc) {
+        if(target[0].indexOf(doc.status) == -1 && req.isSelf) return res.send({ error: "InvalidCondition" });
+        
+        var target = doc.registrants[req.params.type].filter((e) => e._id == req.params.member);
+        if(target.length == 0) {
+          var pushSpec = {};
+          pushSpec["registrants." + req.params.type] = {
+            _id: req.params.member,
+            submission: JSON.stringify(req.body.content),
+            status: 1
+          }
 
-        var pushRestr = {
-          _id: req.params.conf,
-        }
-        pushRestr[`registrants.${req.params.type}._id`] = { $ne: req.params.member };
+          Conf.findByIdAndUpdate(req.params.conf, { $push: pushSpec})
+            .exec((err, doc) => {
+              if(err) return next(err);
+              else return res.send({ msg: "OperationSuccessful" });
+            });
+        } else if(target[0].locked && req.isSelf) return res.send({ error: "DocumentLocked" });
+        else {
+          var restr = {};
+          var update = {};
+          restr._id = req.params.conf;
+          restr[`registrants.${req.params.type}._id`] = req.params.member;
+          update[`registrants.${req.params.type}.$.submission`] = JSON.stringify(req.body.content);
 
-        Conf.findOneAndUpdate(pushRestr, { $push: pushSpec})
-          .exec((err, doc) => {
+          Conf.findOneAndUpdate(restr, update).exec((err, doc) => {
             if(err) return next(err);
-            else if(doc) return res.send({ msg: "OperationSuccessful" });
-            else return res.send({ error: "DocumentLocked" }); // Already has the document, and it's locked
+            else return res.send({ msg: "OperationSuccessful" });
           });
+        }
+      } else {
+        return res.sendStatus(404);
       }
     });
   });
