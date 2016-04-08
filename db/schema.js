@@ -280,3 +280,5 @@ ConfSchema.options.toObject = {
 }
 
 mongoose.model('Conf', ConfSchema);
+
+module.exports = mongoose.connection;

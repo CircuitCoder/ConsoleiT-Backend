@@ -10,6 +10,8 @@ var routes = require('./route/base');
 var strategy = require('./auth.js');
 var passport = require('passport');
 
+var MongoStore = require('connect-mongo')(session);
+
 passport.use(strategy);
 passport.serializeUser(function(user, done) {
   done(null, user);
@@ -29,6 +31,7 @@ app.use(cors({
 
 app.use(session({
   secret: config.auth.secret,
+  store: new MongoStore({ mongooseConnection: dbc }),
   resave: true,
   saveUninitialized: false
 }));

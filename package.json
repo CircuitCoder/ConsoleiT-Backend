@@ -19,6 +19,7 @@
   "homepage": "https://github.com/CircuitCoder/ConsoleiT-Backend#readme",
   "dependencies": {
     "body-parser": "^1.15.0",
+    "connect-mongo": "^1.1.0",
     "cors": "^2.7.1",
     "express": "^4.13.4",
     "express-session": "^1.13.0",
