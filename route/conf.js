@@ -223,13 +223,13 @@ router.post('/:conf(\\d+)/:type/:member(\\d+)',
   }),
   helpers.hasFields(['content']),
   (req, res, next) => {
-    var target = Conf.FORMS.filter((e) => e.db == req.params.type);
-    if(target.length == 0) return res.send({ error: "NoSuchForm" });
+    var targetDesc = Conf.FORMS.filter((e) => e.db == req.params.type);
+    if(targetDesc.length == 0) return res.send({ error: "NoSuchForm" });
 
     Conf.findById(req.params.conf).select(`status registrants.${req.params.type}._id registrants.${req.params.type}.locked`).exec((err, doc) => {
       if(err) return next(err);
       else if(doc) {
-        if(target[0].indexOf(doc.status) == -1 && req.isSelf) return res.send({ error: "InvalidCondition" });
+        if(targetDesc[0].stage.indexOf(doc.status) == -1 && req.isSelf) return res.send({ error: "InvalidCondition" });
         
         var target = doc.registrants[req.params.type].filter((e) => e._id == req.params.member);
         if(target.length == 0) {
