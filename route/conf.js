@@ -106,6 +106,9 @@ router.get('/:conf(\\d+)', helpers.loggedin, (req, res, next) => {
               flag = true;
           return flag;
         }).map((e) => e.route);
+
+        conf.registrants = undefined;
+
         return res.send({
           conf: conf,
           members: results[0],
