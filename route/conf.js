@@ -286,7 +286,7 @@ router.get('/:conf(\\d+)/:type/:member(\\d+)',
 
 router.put('/:conf(\\d+)/:type/:member(\\d+)/lock',
   helpers.toCamel(['type']),
-  helpers.hasPerms([(req) => `registrant.${req.params.type}.admin`]),
+  helpers.hasPerms([(req) => `registrant.${req.params.type}.moderate`]),
   (req, res, next) => {
     var restr = {};
     var update = {};
@@ -301,7 +301,7 @@ router.put('/:conf(\\d+)/:type/:member(\\d+)/lock',
 
 router.delete('/:conf(\\d+)/:type/:member(\\d+)/lock',
   helpers.toCamel(['type']),
-  helpers.hasPerms([(req) => `registrant.${req.params.type}.admin`]),
+  helpers.hasPerms([(req) => `registrant.${req.params.type}.moderate`]),
   (req, res, next) => {
     var restr = {};
     var update = {};
