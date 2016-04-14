@@ -314,6 +314,39 @@ router.delete('/:conf(\\d+)/:type/:member(\\d+)/lock',
     });
   })
 
+router.get('/:conf(\\d+)/:type/:member(\\d+)/note',
+  helpers.toCamel(['type']),
+  helpers.hasPerms([(req) => `registrant.${req.params.type}.moderate`]),
+  (req, res, next) => {
+    var restr = {};
+    var proj = {};
+    restr._id = req.params.conf;
+    restr[`registrants.${req.params.type}._id`] = req.params.member;
+    proj[`registrants.${req.params.type}.$.note`] = 1;
+
+    Conf.findOne(restr, proj).exec((err, doc) => {
+      if(err) return next(err);
+      else if(!doc) res.sendStatue(404); // Unexpected error
+      else return res.send({ note: doc.registrants[req.params.type][0].note });
+    });
+  });
+
+router.post('/:conf(\\d+)/:type/:member(\\d+)/note',
+  helpers.toCamel(['type']),
+  helpers.hasPerms([(req) => `registrant.${req.params.type}.moderate`]),
+  helpers.hasFields(['note']),
+  (req, res, next) => {
+    var restr = {};
+    var update = {};
+    restr._id = req.params.conf;
+    restr[`registrants.${req.params.type}._id`] = req.params.member;
+    update[`registrants.${req.params.type}.$.note`] = req.body.note;
+    Conf.findOneAndUpdate(restr, update).exec((err, doc) => {
+      if(err) return next(err);
+      else return res.send({ msg: "OperationSuccessful" });
+    });
+  });
+
 router.delete('/:conf(\\d+)/:type/:member(\\d+)',
   helpers.toCamel(['type']),
   helpers.root,

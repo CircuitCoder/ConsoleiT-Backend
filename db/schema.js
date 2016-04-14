@@ -182,6 +182,7 @@ var defaultRoles = [{
   }
 }];
 
+//TODO: move registrant out of conf itself for efficiency considerations
 var registrantDesc = {
   _id: Number,
 
@@ -200,6 +201,7 @@ var registrantDesc = {
   comm: Number,
   fromGroup: {type: Number, default: -1}, // -1 indicates a individual registrant
   locked: {type: Boolean, default: false},
+  note: {type: String, default: ""},
 }
 
 var ConfSchema = mongoose.Schema({
