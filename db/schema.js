@@ -1,4 +1,4 @@
-var mongoose = require('mongoose');
+﻿var mongoose = require('mongoose');
 var config = require('../config');
 var crypto = require('crypto');
 
@@ -79,6 +79,77 @@ var UserSchema = mongoose.Schema({
   realname: String,
   resetToken: String,
   isRoot: Boolean,
+
+  /* Personal info */
+
+  /**
+   * Possible value for gender:
+   * - male
+   * - female
+   * - unknown
+   * Or other custom value
+   */ 
+  gender: {
+    type: String,
+    default: "unknown"
+  },
+  phone: String,
+  qq: String,
+
+  /**
+   * Type of identification document 
+   * (this is considering about users who don't have a Chinese National ID):
+   * 1: National ID
+   * 2: Passport
+   * 3: Home Return Permit (HK/Macao) or Taiwan compatriot permit
+   */
+  IDType: Number,
+  IDNumber: String,
+
+  /**
+   * Type of school:
+   * 1: Junior high (Secondary school, middle school)
+   * 2: High school (Senior high)
+   * 3: University
+   * 4: others (does not calculate grade)
+   */
+  schoolType: Number,
+  schoolName: String,
+  yearEnrolled: Number, //Grade is calculated
+
+  /**
+   * This field is for experiences not included in participation records
+   */
+  experiences: {
+    type: [{
+      /**
+       * Name of the conference
+       */
+      conf: String, 
+
+      /**
+       * Level of the conference.
+       * Possible values:
+       * 1: International
+       * 2: National
+       * 3: Provincial
+       * 4: Municipal (city)
+       * 5: Discrict/County
+       * 6: Interscholar
+       * 7: Internal (school)
+       */
+      level: {
+        type: Number, 
+        enum: [1,2,3,4,5,6,7],
+      },
+
+      /**
+       * String repersentation of awards won in that specific conference
+       */
+      awards: String,
+    }],
+    default: []
+  }
 });
 
 UserSchema.methods.validatePasswd = function(passwd) {
