@@ -124,6 +124,7 @@ router.get('/:form/submissions',
         _id: 0,
         user: 1,
         status: 1,
+        locked: 1,
       }).lean().exec((err, rdoc) => {
         if(err) return next(err);
         else {
