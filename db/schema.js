@@ -140,6 +140,28 @@ GroupSchema.options.toObject = {
 
 mongoose.model('Group', GroupSchema);
 
+/* Registrant */
+
+/**
+ * Note: These are active registrant records
+ * Records for archived forms should be stored in another collection, readonly, indexed for fast-lookup
+ */
+var RegistrantSchema = {
+  conf: Number,
+  form: String,
+
+  user: Number,
+
+  status: String,
+  submission: String,
+  fromGroup: {type: Number, default: -1}, // -1 indicates a individual registrant
+
+  locked: {type: Boolean, default: false},
+  note: {type: String, default: ""},
+}
+
+mongoose.model('Registrant', RegistrantSchema);
+
 /* Conference */
 
 var defaultRoles = [{
@@ -182,54 +204,21 @@ var defaultRoles = [{
   }
 }];
 
-//TODO: move registrant out of conf itself for efficiency considerations
-var registrantDesc = {
-  _id: Number,
-
-  /**
-   * Status for academic team members:
-   *
-   * 1: registered
-   * 2: assigned
-   * 3: rejected
-   *
-   * Status for participants:
-   * TBD
-   */
-  status: Number,
-  submission: Number,
-  comm: Number,
-  fromGroup: {type: Number, default: -1}, // -1 indicates a individual registrant
-  locked: {type: Boolean, default: false},
-  note: {type: String, default: ""},
-}
 
 var ConfSchema = mongoose.Schema({
   _id: Number,
   title: String,
   desc: String,
   group: Number,
-  status: {
-    /**
-     * Status for this conference
-     * Possible values:
-     * 0 Initialized
-     *
-     * 1 Academic registeration in process
-     * 2 Academic registeration finished
-     * 3 Pending applicants registeration
-     * 4 Applicants registeration finished
-     * 5 Waiting for payment
-     * 6 Pending academic tests
-     * 7 Pending assignment
-     * 8 Before conference
-     *
-     * -1 Conference finished
-     * -2 Conference abandoned
-     */
-    type: Number,
-    default: 0
-  },
+
+  stages: [{
+    name: String,
+    links: Object,
+  }],
+  currentStage: String,
+  available: { type: Boolean, default: false },
+  archived: { type: Boolean, default: false },
+
   pinned: {
     type: Boolean,
     default: false
@@ -244,18 +233,39 @@ var ConfSchema = mongoose.Schema({
     default: defaultRoles
   },
 
-  forms: {
-    type: {
-      academicZh: String,
-      academicEn: String,
-      participant: String,
+  forms: [{
+    _id: String,
+    title: String,
+
+    /* Form content */
+    content: { type: String, default: [] },
+
+    /* Status */
+    status: {
+      type: String,
+      enum: ['pending', 'open', 'closed', 'archived'],
+      default: 'pending'
     },
-    default: {
-      academicZh: "[]",
-      academicEn: "[]",
-      participant: "[]",
-    }
-  },
+
+    /* Permissions */
+    viewers: { type: [Number], default: [] },
+    moderators: { type: [Number], default: [] },
+    admins: { type: [Number], default: [] },
+
+    /* Automatic Hooks */
+    openOn: {
+      type: [String],
+      default: [],
+    },
+    closedOn: {
+      type: [String],
+      default: [],
+    },
+    /* Otherwise archived */
+
+    /* Possible status for submissions */
+    submissionStatus: [String],
+  }],
 
   members: [{
     _id: Number,
@@ -266,40 +276,11 @@ var ConfSchema = mongoose.Schema({
     _id: Number,
     title: String
   }],
-
-  registrants: {
-    type: {
-      academicZh: [registrantDesc],
-      academicEn: [registrantDesc],
-      participant: [registrantDesc],
-    },
-    default: {
-      academicZh: [],
-      academicEn: [],
-      participant: []
-    }
-  }
 });
 
 ConfSchema.options.toObject = {
   versionKey: false
 }
-
-ConfSchema.statics.FORMS = [
-  {
-    route: 'academic-zh',
-    db: 'academicZh',
-    stage: [1],
-  }, {
-    route: 'academic-en',
-    db: 'academicEn',
-    stage: [1],
-  }, {
-    route: 'participant',
-    db: 'participant',
-    stage: [3],
-  }
-];
 
 mongoose.model('Conf', ConfSchema);
 

@@ -7,9 +7,12 @@ var mongoose = require('mongoose');
 var Conf = mongoose.model('Conf');
 var Counter = mongoose.model('Counter');
 var Group = mongoose.model('Group');
+var Registrant = mongoose.model('Registrant');
 var User = mongoose.model('User');
 
 var helpers = require('./helpers');
+
+var form = require('./conf/form');
 
 function newConf(title, group, uid, cb) {
   Counter.getNext("conf", function(err, id) {
@@ -19,6 +22,8 @@ function newConf(title, group, uid, cb) {
       _id: id,
       title,
       group,
+
+      forms: [],
       members: [{
         _id: uid,
         role: 1
@@ -41,20 +46,20 @@ function newConf(title, group, uid, cb) {
  */
 
 router.get('/', helpers.loggedin, (req, res, next) => {
-  Conf.find({$or: [
-    { "pinned": true },
-    { "members._id": req.user._id },
-    { "registrants.academicZh._id": req.user._id },
-    { "registrants.academicEn._id": req.user._id },
-    { "registrants.participant._id": req.user._id },
-  ]}).select("title status pinned").lean().exec((err, docs) => {
-    if(err) return next(err);
-    else return res.send({ confs: docs });
+  Registrant.distinct('conf', { user: req.user._id }).exec((err, activeReg) => {
+    Conf.find({$or: [
+      { _id: { $in: activeReg } },
+      { pinned: true },
+      { "members._id": req.user._id },
+    ]}).select("title stages currentStage pinned").lean().exec((err, docs) => {
+      if(err) return next(err);
+      else return res.send({ confs: docs });
+    });
   });
 });
 
 router.get('/available', helpers.loggedin, (req, res, next) => {
-  Conf.find({ status: { $gt: 0 } }).select("title status").lean().exec((err, docs) => {
+  Conf.find({ available: true }).select("title stages currentStage").lean().exec((err, docs) => {
     if(err) return next(err);
     else res.send({ confs: docs });
   });
@@ -82,7 +87,16 @@ router.post('/', helpers.hasFields(['title', 'group']), helpers.groupOwner, (req
  */
 
 router.get('/:conf(\\d+)', helpers.loggedin, (req, res, next) => {
-  Conf.findById(req.params.conf).select("title desc group members roles status " + Conf.FORMS.map((e) => `registrants.${e.db}._id`).join(' ')).lean().exec((err, conf) => {
+  Conf.findById(req.params.conf, {
+    title: true,
+    desc: true,
+    group: true,
+    members: true,
+    roles: true,
+    stages: true,
+    currentStage: true,
+    forms: true, // TODO: use projection if possible
+  }).lean().exec((err, conf) => {
     if(err) return next(err);
     else {
       Promise.all([
@@ -97,17 +111,26 @@ router.get('/:conf(\\d+)', helpers.loggedin, (req, res, next) => {
             if(err) reject(err);
             else resolve(group);
           });
-        }),
+        }), new Promise((resolve, reject) => {
+          Registrant.distinct("form", { conf: req.params.conf, user: req.user._id }).exec((err, forms) => {
+            if(err) reject(err);
+            else resolve(forms);
+          });
+        })
       ]).then((results) => {
-        var forms = Conf.FORMS.filter((e) => {
-          var flag = false;
-          for(var i = 0; !flag && i<conf.registrants[e.db].length; ++i)
-            if(conf.registrants[e.db][i]._id == req.user._id)
-              flag = true;
-          return flag;
-        }).map((e) => e.route);
+        //TODO: optimize
+        var forms = [];
+        conf.forms.forEach(e => {
+          var role = null;
+          if(e.admins.indexOf(req.user._id) != -1) role = 'admin';
+          else if(e.moderators.indexOf(req.user._id) != -1) role = 'moderator';
+          else if(e.viewers.indexOf(req.user._id) != -1) role = 'viewer';
+          else if(results[2].indexOf(e) != -1) role = 'applicant';
 
-        conf.registrants = undefined;
+          if(role) forms.push({ name: e._id, title: e.title, role });
+        });
+
+        conf.forms = undefined;
 
         return res.send({
           conf: conf,
@@ -129,7 +152,7 @@ router.post('/:conf(\\d+)',
   helpers.hasFields(["settings"]),
   (req, res, next) => {
     var updateMap = {};
-    ["title", "desc", "status"].forEach((e) => {
+    ["title", "desc", "currentStage", "stages"].forEach((e) => {
       if(e in req.body.settings) updateMap[e] = req.body.settings[e];
     });
     Conf.findByIdAndUpdate(req.params.conf, {$set: updateMap}).exec((err, doc) => {
@@ -185,214 +208,9 @@ router.delete('/:conf(\\d+)/members/:member(\\d+)',
 
 /**
  * Forms and applications
+ * Using sub-router
  */
 
-router.post('/:conf(\\d+)/:type/form',
-  helpers.toCamel(['type']),
-  helpers.hasPerms([(req) => 'form.' + req.params.type +'.modify']),
-  helpers.hasFields(['form']),
-  (req, res, next) => {
-    //TODO: lint the input
-    
-    var updateMap = {};
-    updateMap['forms.' + req.params.type] = JSON.stringify(req.body.form);
-    Conf.findByIdAndUpdate(req.params.conf, { $set: updateMap }).exec((err, doc) => {
-      if(err) return next(err);
-      else return res.send({
-        msg: "OperationSuccessful"
-      });
-    });
-});
-
-router.get('/:conf(\\d+)/:type/form',
-  helpers.toCamel(['type']),
-  helpers.loggedin,
-  (req, res, next) => {
-    Conf.findById(req.params.conf).select('forms').lean().exec((err, doc) => {
-      if(err) return next(err);
-      else if(req.params.type in doc.forms) return res.send(doc.forms[req.params.type]);
-    });
-  });
-
-router.post('/:conf(\\d+)/:type/:member(\\d+)',
-  helpers.toCamel(['type']),
-  helpers.loggedin,
-  helpers.confExists,
-  helpers.hasPerms([(req) => `registrant.${req.params.type}.modify`], (req) => {
-    if(req.user && req.params.member == req.user._id) {
-      req.isSelf = true;
-      return true;
-    } else return false;
-  }),
-  helpers.hasFields(['content']),
-  (req, res, next) => {
-    var targetDesc = Conf.FORMS.filter((e) => e.db == req.params.type);
-    if(targetDesc.length == 0) return res.send({ error: "NoSuchForm" });
-
-    Conf.findById(req.params.conf).select(`status registrants.${req.params.type}._id registrants.${req.params.type}.locked`).exec((err, doc) => {
-      if(err) return next(err);
-      else if(doc) {
-        if(targetDesc[0].stage.indexOf(doc.status) == -1 && req.isSelf) return res.send({ error: "InvalidCondition" });
-        
-        var target = doc.registrants[req.params.type].filter((e) => e._id == req.params.member);
-        if(target.length == 0) {
-          var pushSpec = {};
-          pushSpec["registrants." + req.params.type] = {
-            _id: req.params.member,
-            submission: JSON.stringify(req.body.content),
-            status: 1
-          }
-
-          Conf.findByIdAndUpdate(req.params.conf, { $push: pushSpec})
-            .exec((err, doc) => {
-              if(err) return next(err);
-              else return res.send({ msg: "OperationSuccessful" });
-            });
-        } else if(target[0].locked && req.isSelf) return res.send({ error: "DocumentLocked" });
-        else {
-          var restr = {};
-          var update = {};
-          restr._id = req.params.conf;
-          restr[`registrants.${req.params.type}._id`] = req.params.member;
-          update[`registrants.${req.params.type}.$.submission`] = JSON.stringify(req.body.content);
-
-          Conf.findOneAndUpdate(restr, update).exec((err, doc) => {
-            if(err) return next(err);
-            else return res.send({ msg: "OperationSuccessful" });
-          });
-        }
-      } else {
-        return res.sendStatus(404);
-      }
-    });
-  });
-
-router.get('/:conf(\\d+)/:type/:member(\\d+)',
-  helpers.toCamel(['type']),
-  helpers.hasPerms([(req) => `registrant.${req.params.type}.view`], (req) => req.user && req.params.member == req.user._id ),
-  (req, res, next) => {
-    var restr = {};
-    var proj = {};
-    restr._id = req.params.conf;
-    restr[`registrants.${req.params.type}._id`] = req.params.member;
-    proj[`registrants.${req.params.type}.$`] = 1;
-    Conf.findOne(restr, proj).lean().exec((err, doc) => {
-      if(err) return next(err);
-      // If the current user is the requested user, then it's possible that the conf doesn't exist
-      else if(doc && doc.registrants[req.params.type] && doc.registrants[req.params.type].length > 0) return res.send(doc.registrants[req.params.type][0]);
-      else return res.send({});
-    });
-  });
-
-router.put('/:conf(\\d+)/:type/:member(\\d+)/lock',
-  helpers.toCamel(['type']),
-  helpers.hasPerms([(req) => `registrant.${req.params.type}.moderate`]),
-  (req, res, next) => {
-    var restr = {};
-    var update = {};
-    restr._id = req.params.conf;
-    restr[`registrants.${req.params.type}._id`] = req.params.member;
-    update[`registrants.${req.params.type}.$.locked`] = true;
-    Conf.findOneAndUpdate(restr, update).exec((err, doc) => {
-      if(err) return next(err);
-      else return res.send({ msg: "OperationSuccessful" });
-    });
-  })
-
-router.delete('/:conf(\\d+)/:type/:member(\\d+)/lock',
-  helpers.toCamel(['type']),
-  helpers.hasPerms([(req) => `registrant.${req.params.type}.moderate`]),
-  (req, res, next) => {
-    var restr = {};
-    var update = {};
-    restr._id = req.params.conf;
-    restr[`registrants.${req.params.type}._id`] = req.params.member;
-    update[`registrants.${req.params.type}.$.locked`] = false;
-    Conf.findOneAndUpdate(restr, update).exec((err, doc) => {
-      if(err) return next(err);
-      else return res.send({ msg: "OperationSuccessful" });
-    });
-  })
-
-router.get('/:conf(\\d+)/:type/:member(\\d+)/note',
-  helpers.toCamel(['type']),
-  helpers.hasPerms([(req) => `registrant.${req.params.type}.moderate`]),
-  (req, res, next) => {
-    var restr = {};
-    var proj = {};
-    restr._id = req.params.conf;
-    restr[`registrants.${req.params.type}._id`] = req.params.member;
-    proj[`registrants.${req.params.type}.$.note`] = 1;
-
-    Conf.findOne(restr, proj).exec((err, doc) => {
-      if(err) return next(err);
-      else if(!doc) res.sendStatue(404); // Unexpected error
-      else return res.send({ note: doc.registrants[req.params.type][0].note });
-    });
-  });
-
-router.post('/:conf(\\d+)/:type/:member(\\d+)/note',
-  helpers.toCamel(['type']),
-  helpers.hasPerms([(req) => `registrant.${req.params.type}.moderate`]),
-  helpers.hasFields(['note']),
-  (req, res, next) => {
-    var restr = {};
-    var update = {};
-    restr._id = req.params.conf;
-    restr[`registrants.${req.params.type}._id`] = req.params.member;
-    update[`registrants.${req.params.type}.$.note`] = req.body.note;
-    Conf.findOneAndUpdate(restr, update).exec((err, doc) => {
-      if(err) return next(err);
-      else return res.send({ msg: "OperationSuccessful" });
-    });
-  });
-
-router.delete('/:conf(\\d+)/:type/:member(\\d+)',
-  helpers.toCamel(['type']),
-  helpers.root,
-  (req, res, next) => {
-    var update = {
-      $pull: { }
-    }
-
-    update['$pull'][`registrants.${req.params.type}`] = { id: req.params.member };
-
-    Conf.findByIdAndUpdate(req.params.conf, update).exec((err, doc) => {
-      if(err) return next(err);
-      else return res.send({ msg: "OperationSuccessful" });
-    });
-  })
-
-
-router.get('/:conf(\\d+)/:type',
-  helpers.toCamel(['type']),
-  helpers.loggedin,
-  helpers.confExists,
-  (req, res, next) => {
-    Conf.findById(req.params.conf).select(`registrants.${req.params.type}._id registrants.${req.params.type}.status`).lean().exec((err, doc) => {
-      if(err) return next(err);
-      //TODO: check for conf status
-      else if(req.params.type in doc.registrants) return res.send(doc.registrants[req.params.type].filter( e => e.status == 2 ));
-      else return res.sendStatus(404);
-    });
-  });
-
-router.get('/:conf(\\d+)/:type/all',
-  helpers.toCamel(['type']),
-  helpers.hasPerms([(req) => `form.${req.params.type}.view`]),
-  (req, res, next) => {
-    Conf.findById(req.params.conf).select(`registrants.${req.params.type}._id registrants.${req.params.type}.status registrants.${req.params.type}.locked`).lean().exec((err, doc) => {
-      if(err) return next(err);
-      else {
-        User.find({ _id: { $in: doc.registrants[req.params.type] }}).select("email realname").lean().exec((err, users) => {
-          if(err) return next(err);
-          else return res.send({
-            list: doc.registrants[req.params.type],
-            members: users
-          });
-        });
-      }
-    });
-  })
+router.use('/:conf(\\d+)/form', helpers.loggedin, form);
 
 module.exports = router;
