@@ -74,11 +74,19 @@ router.route('/:form')
     if(err) return next(err);
     else if(!doc.forms || doc.forms.length == 0)
       return res.sendStatus(404);
-    else return res.send({
+    else {
+      var role = 'applicant';
+      if(doc.forms[0].viewers.indexOf(req.user._id) != -1) role = 'viewer';
+      if(doc.forms[0].moderators.indexOf(req.user._id) != -1) role = 'moderator';
+      if(doc.forms[0].admins.indexOf(req.user._id) != -1) role = 'admin';
+
+      return res.send({
         content: JSON.parse(doc.forms[0].content),
         status: doc.forms[0].status,
         title: doc.forms[0].title,
+        role,
       });
+    }
   });
 });
 
