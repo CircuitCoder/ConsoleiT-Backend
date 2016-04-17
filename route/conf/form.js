@@ -96,11 +96,17 @@ router.route('/:form/content')
   (req, res, next) => {
     Conf.findOneAndUpdate({
       _id: req.params.conf,
-      'forms._id': req.params.form,
-      'forms.admin': req.user._id,
+      forms: {
+        $elemMatch: {
+          _id: req.params.form,
+          admins: req.user._id,
+        }
+      }
     }, {
-      'forms.$.content': req.body.content,
-      'forms.$.title': req.body.content
+      $set: {
+        'forms.$.content': JSON.stringify(req.body.content),
+        'forms.$.title': req.body.title
+      }
     }).exec((err, doc) => {
       if(err) return next(err);
       else if(!doc) return res.sendStatus(404);
