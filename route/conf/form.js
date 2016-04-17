@@ -75,7 +75,7 @@ router.route('/:form')
     else if(!doc.forms || doc.forms.length == 0)
       return res.sendStatus(404);
     else return res.send({
-        content: doc.forms[0].content,
+        content: JSON.parse(doc.forms[0].content),
         status: doc.forms[0].status,
         title: doc.forms[0].title,
       });
