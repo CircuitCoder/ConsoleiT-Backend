@@ -6,11 +6,13 @@ var config = require('../config');
 var account = require('./account');
 var group = require('./group');
 var conf = require('./conf');
+var user = require('./user');
 var testing = require('./testing');
 
 router.use('/account', account);
 router.use('/group', group);
 router.use('/conf', conf);
+router.use('/user', user);
 
 if(config.develop.testing) router.use('/testing', testing);
 

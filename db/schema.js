@@ -94,7 +94,7 @@ var UserSchema = mongoose.Schema({
     default: "unknown"
   },
   phone: String,
-  qq: String,
+  desc: String,
 
   /**
    * Type of identification document 
