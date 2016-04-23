@@ -128,7 +128,6 @@ router.get('/:conf(\\d+)', helpers.loggedin, (req, res, next) => {
       ]).then((results) => {
         //TODO: optimize
         var forms = [];
-        console.log(results[3]);
         results[3].forEach(e => {
           var role = null;
           if(e.admins.indexOf(req.user._id) != -1) role = 'admin';

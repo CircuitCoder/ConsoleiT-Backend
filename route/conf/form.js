@@ -12,14 +12,11 @@ var Registrant = mongoose.model('Registrant');
 var helpers = require('../helpers');
 
 function checkFormPerm(conf, form, uid, level) {
-  console.log(conf);
-  console.log(form);
   return new Promise((resolve, reject) => {
     Form.findOne({
       conf: conf,
       name: form,
     }).exec((err, form) => {
-      console.log(form);
       if(err) reject(err);
       else if(!form) resolve(false);
       else {
