@@ -47,11 +47,11 @@ function newConf(title, group, uid, cb) {
 
 router.get('/', helpers.loggedin, (req, res, next) => {
   // TODO: participants and dias
-  Registrant.distinct('conf', { user: req.user._id }).exec((err, activeReg) => {
+  Registrant.distinct('conf', { user: req.user }).exec((err, activeReg) => {
     Conf.find({$or: [
       { _id: { $in: activeReg } },
       { pinned: true },
-      { "members._id": req.user._id },
+      { "members._id": req.user },
     ]}).select("title stages currentStage pinned").lean().exec((err, docs) => {
       if(err) return next(err);
       else return res.send({ confs: docs });
@@ -78,9 +78,9 @@ router.post('/', helpers.hasFields(['title', 'group']), helpers.groupOwner, (req
         msg: "OperationSuccessful",
         id: id
       });
-    } else newConf(req.body.title, req.body.group, req.user._id, cb)
+    } else newConf(req.body.title, req.body.group, req.user, cb)
   }; 
-  newConf(req.body.title, req.body.group, req.user._id, cb);
+  newConf(req.body.title, req.body.group, req.user, cb);
 });
 
 /**
@@ -112,7 +112,7 @@ router.get('/:conf(\\d+)', helpers.loggedin, (req, res, next) => {
             else resolve(group);
           });
         }), new Promise((resolve, reject) => {
-          Registrant.distinct("form", { conf: req.params.conf, user: req.user._id }).exec((err, forms) => {
+          Registrant.distinct("form", { conf: req.params.conf, user: req.user }).exec((err, forms) => {
             if(err) reject(err);
             else resolve(forms);
           });
@@ -130,9 +130,9 @@ router.get('/:conf(\\d+)', helpers.loggedin, (req, res, next) => {
         var forms = [];
         results[3].forEach(e => {
           var role = null;
-          if(e.admins.indexOf(req.user._id) != -1) role = 'admin';
-          else if(e.moderators.indexOf(req.user._id) != -1) role = 'moderator';
-          else if(e.viewers.indexOf(req.user._id) != -1) role = 'viewer';
+          if(e.admins.indexOf(req.user) != -1) role = 'admin';
+          else if(e.moderators.indexOf(req.user) != -1) role = 'moderator';
+          else if(e.viewers.indexOf(req.user) != -1) role = 'viewer';
           else if(results[2].indexOf(e) != -1) role = 'applicant';
 
           if(role) forms.push({ name: e.name, title: e.title, role });

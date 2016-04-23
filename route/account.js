@@ -43,7 +43,7 @@ router.post('/login', helpers.hasFields(['email', 'passwd']), helpers.toLower(nu
       if(err) return next(err);
       else if(!user) return res.send({error: 'CredentialRejected'});
       else {
-        req.login(user, (err) => {
+        req.login(user._id, (err) => {
           if(err) {
             return next(err);
           } else {
@@ -94,7 +94,10 @@ router.get('/logout', (req, res, next) => {
 
 router.get('/restore', (req, res, next) => {
   if(req.user) {
-    res.send({ user: req.user })
+    User.findById(req.user).exec((err, doc) => {
+      if(err) return next(err);
+      else res.send({ user: doc.toObject() })
+    });
   } else {
     res.send({ error: "NotLoggedIn" });
   }

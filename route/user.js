@@ -56,7 +56,7 @@ router.route('/:id(\\d+)')
   })
 .post(
   helpers.loggedin,
-  (req, res, next) => (req.params.id == req.user._id ? next() : res.sendStatus(403)),
+  (req, res, next) => (req.params.id == req.user ? next() : res.sendStatus(403)),
   helpers.hasFields(['user']),
   (req, res, next) => {
     var filtered = {};
@@ -75,7 +75,7 @@ router.route('/:id(\\d+)')
 
 router.get('/:id/self',
   helpers.loggedin,
-  (req, res, next) => (req.params.id == req.user._id ? next() : res.sendStatus(403)),
+  (req, res, next) => (req.params.id == req.user ? next() : res.sendStatus(403)),
   (req, res, next) => {
     User.findById(req.params.id).lean().exec((err, doc) => {
       if(err) return next(err);

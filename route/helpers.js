@@ -56,7 +56,7 @@ module.exports.groupOwner = (req, res, next) => {
     Group.findById(group).exec((err, doc) => {
       if(err) return next(err);
       else if(doc) {
-        if(doc.owner == req.user._id) {
+        if(doc.owner == req.user) {
           req.group = doc;
           return next();
         }
@@ -101,7 +101,7 @@ module.exports.hasPerms = (perms, except) => {
       var conf = getParam(req, "conf");
       Conf.findById(conf, {
         roles: true,
-        members: { $elemMatch: { _id: req.user._id } },
+        members: { $elemMatch: { _id: req.user } },
       }).lean().exec((err, doc) => {
         if(err) return next(err);
         else if(!doc) return res.sendStatus(400);

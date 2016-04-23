@@ -76,9 +76,9 @@ router.route('/:form')
       return res.sendStatus(404);
     else {
       var role = 'applicant';
-      if(doc.viewers.indexOf(req.user._id) != -1) role = 'viewer';
-      if(doc.moderators.indexOf(req.user._id) != -1) role = 'moderator';
-      if(doc.admins.indexOf(req.user._id) != -1) role = 'admin';
+      if(doc.viewers.indexOf(req.user) != -1) role = 'viewer';
+      if(doc.moderators.indexOf(req.user) != -1) role = 'moderator';
+      if(doc.admins.indexOf(req.user) != -1) role = 'admin';
 
       return res.send({
         content: doc.content,
@@ -97,7 +97,7 @@ router.route('/:form/content')
     Form.findOneAndUpdate({
       conf: req.params.conf,
       name: req.params.form,
-      admins: req.user._id,
+      admins: req.user,
     }, {
       content: req.body.content,
       title: req.body.title,
@@ -114,7 +114,7 @@ router.route('/:form/content')
  */
 router.get('/:form/submissions',
   (req, res, next) => {
-    checkFormPerm(req.params.conf, req.params.form, req.user._id, "viewer").then(result => {
+    checkFormPerm(req.params.conf, req.params.form, req.user, "viewer").then(result => {
       if(!result) return res.sendStatus(403);
 
       Registrant.find({
@@ -156,8 +156,8 @@ router.get('/:form/submissions',
 router.route('/:form/submission/:user(\\d+)')
 .get((req, res, next) => {
   new Promise((resolve, reject) => {
-    if(req.params.user == req.user._id) return resolve(true);
-    else return checkFormPerm(req.params.conf, req.params.form, req.user._id, 'viewer').then(resolve).catch(reject);
+    if(req.params.user == req.user) return resolve(true);
+    else return checkFormPerm(req.params.conf, req.params.form, req.user, 'viewer').then(resolve).catch(reject);
   }).then(result => {
     if(!result) res.sendStatus(403);
     else {
@@ -168,7 +168,7 @@ router.route('/:form/submission/:user(\\d+)')
       }, {
         _id: false,
         user: true,
-        status: (req.params.user == req.user._id ? false : true), //TODO: show status to user after archived
+        status: (req.params.user == req.user ? false : true), //TODO: show status to user after archived
         submission: true,
         locked: true,
       }).lean().exec((err, doc) => {
@@ -191,12 +191,12 @@ router.route('/:form/submission/:user(\\d+)')
         else if(!form)
           return res.sendStatus(404);
         else {
-          if(form.admins.indexOf(req.user._id) != -1) return resolve({
+          if(form.admins.indexOf(req.user) != -1) return resolve({
             role: 'admin',
             initStatus: form.submissionStatus[0],
             formOpen: form.status == 'open'
           });
-          else if(req.params.user == req.user._id) return resolve({
+          else if(req.params.user == req.user) return resolve({
             role: 'user',
             initStatus: form.submissionStatus[0],
             formOpen: form.status == 'open'
@@ -240,7 +240,7 @@ router.route('/:form/submission/:user(\\d+)')
 
 router.route('/:form/submission/:user/lock')
 .put((req, res, next) => {
-  checkFormPerm(req.params.conf, req.params.form, req.user._id, 'moderator').then(result => {
+  checkFormPerm(req.params.conf, req.params.form, req.user, 'moderator').then(result => {
     if(!result) return res.sendStatus(403);
     else {
       Registrant.findOneAndUpdate({
@@ -258,7 +258,7 @@ router.route('/:form/submission/:user/lock')
   });
 })
 .delete((req, res, next) => {
-  checkFormPerm(req.params.conf, req.params.form, req.user._id, 'moderator').then(result => {
+  checkFormPerm(req.params.conf, req.params.form, req.user, 'moderator').then(result => {
     if(!result) return res.sendStatus(403);
     else {
       Registrant.findOneAndUpdate({
@@ -278,7 +278,7 @@ router.route('/:form/submission/:user/lock')
 
 router.route('/:form/submission/:user/note')
 .get((req, res, next) => {
-  checkFormPerm(req.params.conf, req.params.form, req.user._id, 'moderator').then(result => {
+  checkFormPerm(req.params.conf, req.params.form, req.user, 'moderator').then(result => {
     if(!result) return res.sendStatus(403);
     else {
       Registrant.findOne({
@@ -298,7 +298,7 @@ router.route('/:form/submission/:user/note')
 .post(
   helpers.hasFields(['note']),
   (req, res, next) => {
-    checkFormPerm(req.params.conf, req.params.form, req.user._id, 'moderator').then(result => {
+    checkFormPerm(req.params.conf, req.params.form, req.user, 'moderator').then(result => {
       if(!result) return res.sendStatus(403);
       else {
         Registrant.findOneAndUpdate({
@@ -329,7 +329,7 @@ router.put('/:form/settings/:action(close|open)',
     Form.findOneAndUpdate({
       conf: req.params.conf,
       name: req.params.form,
-      admins: req.user._id,
+      admins: req.user,
       status: { $ne: 'archived' },
     }, {
       $set: {
@@ -348,7 +348,7 @@ router.put('/:form/settings/archive',
     Form.findOneAndUpdate({
       conf: req.params.conf,
       name: req.params.form,
-      admins: req.user._id,
+      admins: req.user,
     }, {
       $set: {
         status: 'archived',
