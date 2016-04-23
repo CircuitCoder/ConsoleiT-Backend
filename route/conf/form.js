@@ -5,23 +5,24 @@ var router = express.Router({ mergeParams: true });
 
 var mongoose = require('mongoose');
 var Conf = mongoose.model('Conf');
+var Form = mongoose.model('Form');
 var User = mongoose.model('User');
 var Registrant = mongoose.model('Registrant');
 
 var helpers = require('../helpers');
 
 function checkFormPerm(conf, form, uid, level) {
+  console.log(conf);
+  console.log(form);
   return new Promise((resolve, reject) => {
-    Conf.findOne({
-      _id: conf,
-      'forms._id': form
-    }, {
-      'forms.$': true
-    }).exec((err, doc) => {
+    Form.findOne({
+      conf: conf,
+      name: form,
+    }).exec((err, form) => {
+      console.log(form);
       if(err) reject(err);
-      else if(!doc || !doc.forms || doc.forms.length == 0) resolve(false);
+      else if(!form) resolve(false);
       else {
-        var form = doc.forms[0];
         switch(level) {
           case "viewer":
             if(form.viewers.indexOf(uid) != -1) return resolve(true);
@@ -48,18 +49,19 @@ router.post('/',
   helpers.hasPerms(['form.creation']),
   helpers.hasFields(['id', 'title']),
   (req, res, next) => {
-    Conf.findByIdAndUpdate(req.params.conf, { $push: {
-      forms: {
-        _id: req.body.id,
-        title: req.body.title,
+    Form.findOne({
+      conf: req.params.conf,
+      name: req.body.id,
+    }).exec((err, doc) => {
+      if(err) return next(err);
+      else if(doc) return res.send({ error: "DuplicatedId" });
+      else {
+        Form.insert({
+          conf: req.params.conf,
+          name: req.body.id,
+          title: req.body.title,
+        })
       }
-    } }).exec((err, doc) => {
-      if(err) {
-        if(err.code == 11000) {
-          // Duplicated _id
-          return res.send({ error: "DuplicatedId" });
-        } else return next(err);
-      } else return res.send({ msg: "OperationSuccessful" });
     });
   });
 
@@ -68,22 +70,23 @@ router.post('/',
  */
 router.route('/:form')
 .get((req, res, next) => {
-  Conf.findById(req.params.conf, {
-    forms: { $elemMatch: { _id: req.params.form } }
+  Form.findOne({
+    conf: req.params.conf,
+    name: req.params.form
   }).lean().exec((err, doc) => {
     if(err) return next(err);
-    else if(!doc.forms || doc.forms.length == 0)
+    else if(!doc)
       return res.sendStatus(404);
     else {
       var role = 'applicant';
-      if(doc.forms[0].viewers.indexOf(req.user._id) != -1) role = 'viewer';
-      if(doc.forms[0].moderators.indexOf(req.user._id) != -1) role = 'moderator';
-      if(doc.forms[0].admins.indexOf(req.user._id) != -1) role = 'admin';
+      if(doc.viewers.indexOf(req.user._id) != -1) role = 'viewer';
+      if(doc.moderators.indexOf(req.user._id) != -1) role = 'moderator';
+      if(doc.admins.indexOf(req.user._id) != -1) role = 'admin';
 
       return res.send({
-        content: JSON.parse(doc.forms[0].content),
-        status: doc.forms[0].status,
-        title: doc.forms[0].title,
+        content: doc.content,
+        status: doc.status,
+        title: doc.title,
         role,
       });
     }
@@ -94,19 +97,13 @@ router.route('/:form/content')
 .post(
   helpers.hasFields(['content', 'title']),
   (req, res, next) => {
-    Conf.findOneAndUpdate({
-      _id: req.params.conf,
-      forms: {
-        $elemMatch: {
-          _id: req.params.form,
-          admins: req.user._id,
-        }
-      }
+    Form.findOneAndUpdate({
+      conf: req.params.conf,
+      name: req.params.form,
+      admins: req.user._id,
     }, {
-      $set: {
-        'forms.$.content': JSON.stringify(req.body.content),
-        'forms.$.title': req.body.title
-      }
+      content: req.body.content,
+      title: req.body.title,
     }).exec((err, doc) => {
       if(err) return next(err);
       else if(!doc) return res.sendStatus(404);
@@ -180,10 +177,7 @@ router.route('/:form/submission/:user(\\d+)')
       }).lean().exec((err, doc) => {
         if(err) return next(err);
         else if(!doc) return res.send({ submission: {}, locked: false, new: true}); // Indicates that it is not saved
-        else {
-          doc.submission = JSON.parse(doc.submission);
-          return res.send(doc);
-        }
+        else return res.send(doc);
       });
     }
   }).catch(e => next(e));
@@ -192,18 +186,14 @@ router.route('/:form/submission/:user(\\d+)')
   helpers.hasFields(['submission']),
   (req, res, next) => {
     new Promise((resolve, reject) => {
-      Conf.findById(req.params.conf, {
-        forms: {
-          $elemMatch: {
-            _id: req.params.conf
-          }
-        }
-      }).exec((err, doc) => {
+      Form.findOne({
+        conf: req.params.conf,
+        name: req.params.form,
+      }).exec((err, form) => {
         if(err) return reject(err);
-        else if(!doc || !doc.forms || doc.forms.length == 0)
-          return res.sendStatus(403);
+        else if(!form)
+          return res.sendStatus(404);
         else {
-          var form = doc.forms[0];
           if(form.admins.indexOf(req.user._id) != -1) return resolve({
             role: 'admin',
             initStatus: form.submissionStatus[0],
@@ -233,7 +223,8 @@ router.route('/:form/submission/:user(\\d+)')
                 form: req.params.form,
                 user: req.params.user,
                 status: result.initStatus,
-                submission: JSON.stringify(req.body.submission),
+                //TODO: sanitize
+                submission: req.body.submission,
               }).exec((err, ndoc) => {
                 res.send({ msg: "OperationSuccessful" });
               });
@@ -338,18 +329,14 @@ const actionStatusMap = {
 
 router.put('/:form/settings/:action(close|open)',
   (req, res, next) => {
-    Conf.findOneAndUpdate({
-      _id: req.params.conf,
-      forms: {
-        $elemMatch: {
-          _id: req.params.form,
-          admins: req.user._id,
-          status: { $ne: 'archived' },
-        }
-      },
+    Form.findOneAndUpdate({
+      conf: req.params.conf,
+      name: req.params.form,
+      admins: req.user._id,
+      status: { $ne: 'archived' },
     }, {
       $set: {
-        'forms.$.status': actionStatusMap[req.params.action],
+        status: actionStatusMap[req.params.action],
       }
     }).exec((err, doc) => {
       if(err) return next(err);
@@ -361,17 +348,13 @@ router.put('/:form/settings/:action(close|open)',
 router.put('/:form/settings/archive',
   (req, res, next) => {
     //TODO: archive data
-    Conf.findOneAndUpdate({
-      _id: req.params.conf,
-      forms: {
-        $elemMatch: {
-          _id: req.params.form,
-          admins: req.user._id,
-        }
-      },
+    Form.findOneAndUpdate({
+      conf: req.params.conf,
+      name: req.params.form,
+      admins: req.user._id,
     }, {
       $set: {
-        'forms.$.status': 'archived'
+        status: 'archived',
       }
     }).exec((err, doc) => {
       if(err) return next(err);
@@ -389,15 +372,19 @@ router.post('/:form/settings/permissions',
   (req, res, next) => {
     //TODO: lint the input
     
-    Conf.findOneAndUpdate({
-      _id: req.params.conf,
-      'forms._id': req.params.form,
+    Form.findOneAndUpdate({
+      conf: req.params.conf,
+      name: req.params.form,
     }, {
-      'forms.$.viewers': req.body.viewers,
-      'forms.$.moderators': req.body.moderators,
-      'forms.$.admins': req.body.admins,
+      $set: {
+        viewers: req.body.viewers,
+        moderators: req.body.moderators,
+        admins: req.body.admins,
+      }
     }).exec((err, doc) => {
-      if(!doc) return res.sendStatus(404);
+      if(err) return next(err);
+      else if(!doc) return res.sendStatus(404);
+      else return res.send({ msg: "OperationSuccessful" });
     });
   })
 

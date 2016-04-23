@@ -9,6 +9,7 @@ var Counter = mongoose.model('Counter');
 var Group = mongoose.model('Group');
 var Registrant = mongoose.model('Registrant');
 var User = mongoose.model('User');
+var Form = mongoose.model('Form');
 
 var helpers = require('./helpers');
 
@@ -23,7 +24,6 @@ function newConf(title, group, uid, cb) {
       title,
       group,
 
-      forms: [],
       members: [{
         _id: uid,
         role: 1
@@ -46,6 +46,7 @@ function newConf(title, group, uid, cb) {
  */
 
 router.get('/', helpers.loggedin, (req, res, next) => {
+  // TODO: participants and dias
   Registrant.distinct('conf', { user: req.user._id }).exec((err, activeReg) => {
     Conf.find({$or: [
       { _id: { $in: activeReg } },
@@ -95,7 +96,6 @@ router.get('/:conf(\\d+)', helpers.loggedin, (req, res, next) => {
     roles: true,
     stages: true,
     currentStage: true,
-    forms: true, // TODO: use projection if possible
   }).lean().exec((err, conf) => {
     if(err) return next(err);
     else {
@@ -116,21 +116,28 @@ router.get('/:conf(\\d+)', helpers.loggedin, (req, res, next) => {
             if(err) reject(err);
             else resolve(forms);
           });
+        }), new Promise((resolve, reject) => {
+          Form.find({
+            conf: req.params.conf,
+            status: { $ne: 'archived' },
+          }).exec((err, forms) => {
+            if(err) reject(err);
+            else resolve(forms);
+          });
         })
       ]).then((results) => {
         //TODO: optimize
         var forms = [];
-        conf.forms.forEach(e => {
+        console.log(results[3]);
+        results[3].forEach(e => {
           var role = null;
           if(e.admins.indexOf(req.user._id) != -1) role = 'admin';
           else if(e.moderators.indexOf(req.user._id) != -1) role = 'moderator';
           else if(e.viewers.indexOf(req.user._id) != -1) role = 'viewer';
           else if(results[2].indexOf(e) != -1) role = 'applicant';
 
-          if(role) forms.push({ name: e._id, title: e.title, role });
+          if(role) forms.push({ name: e.name, title: e.title, role });
         });
-
-        conf.forms = undefined;
 
         return res.send({
           conf: conf,
