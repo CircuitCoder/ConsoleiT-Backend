@@ -1,4 +1,6 @@
 var mongoose = require('mongoose');
+var crypto = require('crypto');
+var config = require('../../config');
 
 var UserSchema = mongoose.Schema({
   _id: Number,

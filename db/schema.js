@@ -1,6 +1,5 @@
 ﻿var mongoose = require('mongoose');
 var config = require('../config');
-var crypto = require('crypto');
 
 mongoose.connect(config.db.uri);
 
