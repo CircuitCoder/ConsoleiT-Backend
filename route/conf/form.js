@@ -39,6 +39,23 @@ function checkFormPerm(conf, form, uid, level) {
 }
 
 /**
+ * List all
+ */
+
+router.get('/all',
+  helpers.hasPerms(['form.list']),
+  (req, res, next) => {
+    Form.find({
+      conf: req.params.conf
+    }, {
+      name: 1,
+      title: 1,
+      status: 1,
+      _id: 0,
+    }).lean().exec((err, doc) => err ? next(err) : res.send(doc));
+  });
+
+/**
  * Creation
  */
 
@@ -53,11 +70,16 @@ router.post('/',
       if(err) return next(err);
       else if(doc) return res.send({ error: "DuplicatedId" });
       else {
-        Form.insert({
+        var targetForm = new Form({
           conf: req.params.conf,
           name: req.body.id,
           title: req.body.title,
         })
+        
+        targetForm.save((err) => {
+          if(err) return next(err);
+          else return res.send({ id: targetForm.name });
+        });
       }
     });
   });

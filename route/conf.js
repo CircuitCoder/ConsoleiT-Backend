@@ -120,6 +120,12 @@ router.get('/:conf(\\d+)', helpers.loggedin, (req, res, next) => {
           Form.find({
             conf: req.params.conf,
             status: { $ne: 'archived' },
+          }, {
+            admins: 1,
+            moderators: 1,
+            viewers: 1,
+            name: 1,
+            title: 1,
           }).exec((err, forms) => {
             if(err) reject(err);
             else resolve(forms);
@@ -135,7 +141,7 @@ router.get('/:conf(\\d+)', helpers.loggedin, (req, res, next) => {
           else if(e.viewers.indexOf(req.user) != -1) role = 'viewer';
           else if(results[2].indexOf(e) != -1) role = 'applicant';
 
-          if(role) forms.push({ name: e.name, title: e.title, role });
+          if(role || e.status == "open") forms.push({ name: e.name, title: e.title, role });
         });
 
         return res.send({

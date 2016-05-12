@@ -47,6 +47,8 @@ var FormSchema = mongoose.Schema({
     }],
     default: [],
   },
+
+  keywords: { type: [Number], default: [] },
 });
 
 module.exports = FormSchema;
