@@ -120,10 +120,10 @@ router.route('/:form/content')
 .post(
   helpers.hasFields(['content', 'title']),
   (req, res, next) => {
-    console.log(req.body.content);
     Form.findOneAndUpdate({
       conf: req.params.conf,
       name: req.params.form,
+      status: { $ne: 'archived' },
       admins: req.user,
     }, {
       content: req.body.content,
@@ -252,12 +252,14 @@ router.route('/:form/submission/:user(\\d+)')
               }).exec((err, ndoc) => {
                 res.send({ msg: "OperationSuccessful" });
               });
+            } else {
+              //TODO: closed form
             }
           } else {
             if(doc.locked && result.role == 'user')
               res.sendStatus(403);
             else {
-              doc.submission = JSON.stringify(req.body.submission);
+              doc.submission = req.body.submission;
             }
           }
         });
@@ -375,6 +377,7 @@ router.put('/:form/settings/archive',
     Form.findOneAndUpdate({
       conf: req.params.conf,
       name: req.params.form,
+      status: { $ne: 'archived' },
       admins: req.user,
     }, {
       $set: {
@@ -383,6 +386,21 @@ router.put('/:form/settings/archive',
     }).exec((err, doc) => {
       if(err) return next(err);
       else if(!doc) return res.sendStatus(404);
+      else return res.send({ msg: "OperationSuccessful" });
+    });
+  });
+
+router.delete('/:form',
+  (req, res, next) => {
+    Form.remove({
+      conf: req.params.conf,
+      name: req.params.form,
+      status: 'pending',
+      admins: req.user,
+    }).exec((err, wres) => {
+      console.log(wres);
+      if(err) return next(err);
+      else if(wres.result.n == 0) return res.sendStatus(404);
       else return res.send({ msg: "OperationSuccessful" });
     });
   });
