@@ -11,7 +11,7 @@ var FormSchema = mongoose.Schema({
   committee: String,
 
   /* Form content */
-  content: Object,
+  content: { type: [mongoose.Schema.Types.Mixed], default: [] },
 
   /* Status */
   status: {

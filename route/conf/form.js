@@ -51,6 +51,9 @@ router.get('/all',
       name: 1,
       title: 1,
       status: 1,
+      admins: 1,
+      moderators: 1,
+      viewers: 1,
       _id: 0,
     }).lean().exec((err, doc) => err ? next(err) : res.send(doc));
   });
@@ -74,7 +77,8 @@ router.post('/',
           conf: req.params.conf,
           name: req.body.id,
           title: req.body.title,
-        })
+          admins: [ req.user ],
+        });
         
         targetForm.save((err) => {
           if(err) return next(err);
@@ -116,6 +120,7 @@ router.route('/:form/content')
 .post(
   helpers.hasFields(['content', 'title']),
   (req, res, next) => {
+    console.log(req.body.content);
     Form.findOneAndUpdate({
       conf: req.params.conf,
       name: req.params.form,
