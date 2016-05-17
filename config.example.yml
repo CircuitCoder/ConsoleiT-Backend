@@ -47,4 +47,13 @@ mailer:
 # Developer options
 develop:
   # Enable testing routes
-  testing: true
+  testing: false 
+
+app:
+  # Production-related static settings
+  schools:
+    # List of schools
+    # Will be moved to setting page
+    - School A
+    - School B
+    - School C

@@ -42,18 +42,54 @@ router.post('/login', helpers.hasFields(['email', 'passwd']), helpers.toLower(nu
     passport.authenticate('local', (err, user) => {
       if(err) return next(err);
       else if(!user) return res.send({error: 'CredentialRejected'});
-      else {
+      else if(!user.initialized) {
+        // Request initialization
+        return res.send({
+          error: "InitializationRequired",
+          schoolList: config.app.schools,
+        })
+      } else {
         req.login(user._id, (err) => {
           if(err) {
             return next(err);
           } else {
-            return res.send({ user });
+            return res.send({ user: user.toObject() });
           }
         });
       }
     })(req, res, next);
   }
 });
+
+router.post('/initialize',
+  helpers.hasFields(['email', 'passwd', 'school']),
+  helpers.toLower(null, ['email']),
+  (req, res, next) => {
+    if(req.user) return res.send({ error: "InvalidCondition" });
+
+    // Using standard passport authentication here
+    // Because this interface will only be called once
+    passport.authenticate('local', (err, user) => {
+      if(err) return next(err);
+      else if(!user) return res.send({ error: 'CredentialRejected' });
+      else if(user.initialized) res.send({ error: "InvalidCondition" });
+      else {
+        // Initialize
+        user.initialized = true;
+        user.school = req.body.school;
+        user.save((err) => {
+          if(err) return next(err);
+          else req.login(user._id, (err) => {
+            if(err) {
+              return next(err);
+            } else {
+              return res.send({ user: user.toObject() });
+            }
+          });
+        });
+      };
+    })(req, res, next);
+  });
 
 router.post('/register', helpers.hasFields(['realname', 'email']), helpers.toLower(null, ['email']), (req, res, next) => {
   User.findOne({email: req.body.email}).exec((err, doc) => {

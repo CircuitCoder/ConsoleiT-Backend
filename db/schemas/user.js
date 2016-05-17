@@ -9,6 +9,7 @@ var UserSchema = mongoose.Schema({
   realname: String,
   resetToken: String,
   isRoot: Boolean,
+  initialized: { type: Boolean, default: false },
 
   /* Personal info */
 

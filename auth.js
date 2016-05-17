@@ -13,7 +13,7 @@ var strategy = new LocalStrategy({
     else {
       user.resetToken = undefined;
       user.save();
-      return done(null, user.toObject());
+      return done(null, user);
     }
   });
 });

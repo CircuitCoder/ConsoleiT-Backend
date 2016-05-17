@@ -8,6 +8,7 @@ var User = mongoose.model('User');
 var Group = mongoose.model('Group');
 
 var helpers = require('./helpers');
+var config = require('../config');
 
 router.route('/:id(\\d+)')
 .get(
@@ -78,8 +79,14 @@ router.get('/:id/self',
   (req, res, next) => (req.params.id == req.user ? next() : res.sendStatus(403)),
   (req, res, next) => {
     User.findById(req.params.id).lean().exec((err, doc) => {
+      // Include possible school names in the response
       if(err) return next(err);
-      else return res.send(doc);
+      else {
+        doc.meta = {
+          schoolList: config.app.schools
+        };
+        return res.send(doc);
+      }
     });
   });
 
