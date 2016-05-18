@@ -1,7 +1,9 @@
 # ConsoleiT Backend
 ConsoleiT 的后端代码
 
-[![依赖状态](https://david-dm.org/CircuitCoder/ConsoleiT-Backend.svg)](https://david-dm.org/CircuitCoder/ConsoleiT-Backend)
+[![bitHound Overall Score](https://www.bithound.io/github/CircuitCoder/ConsoleiT-Backend/badges/score.svg)](https://www.bithound.io/github/CircuitCoder/ConsoleiT-Backend)
+[![bitHound Dependencies](https://www.bithound.io/github/CircuitCoder/ConsoleiT-Backend/badges/dependencies.svg)](https://www.bithound.io/github/CircuitCoder/ConsoleiT-Backend/master/dependencies/npm)
+[![bitHound Code](https://www.bithound.io/github/CircuitCoder/ConsoleiT-Backend/badges/code.svg)](https://www.bithound.io/github/CircuitCoder/ConsoleiT-Backend)
 
 ## 运行
 首先请将项目根目录下 `config.example.yml` 复制为 `config.yml`，并改变其中配置
