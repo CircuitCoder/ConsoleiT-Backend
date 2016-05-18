@@ -28,16 +28,6 @@ var UserSchema = mongoose.Schema({
   desc: String,
 
   /**
-   * Type of identification document 
-   * (this is considering about users who don't have a Chinese National ID):
-   * 1: National ID
-   * 2: Passport
-   * 3: Home Return Permit (HK/Macao) or Taiwan compatriot permit
-   */
-  IDType: Number,
-  IDNumber: String,
-
-  /**
    * Type of school:
    * 1: Junior high (Secondary school, middle school)
    * 2: High school (Senior high)
@@ -46,7 +36,7 @@ var UserSchema = mongoose.Schema({
    */
   schoolType: Number,
   schoolName: String,
-  yearEnrolled: Number, //Grade is calculated
+  graduationYear: Number, //Grade is calculated
 
   experiences: {
     type: [{

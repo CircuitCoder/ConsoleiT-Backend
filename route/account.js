@@ -62,7 +62,7 @@ router.post('/login', helpers.hasFields(['email', 'passwd']), helpers.toLower(nu
 });
 
 router.post('/initialize',
-  helpers.hasFields(['email', 'passwd', 'school']),
+  helpers.hasFields(['email', 'passwd', 'schoolName', 'schoolType', 'graduationYear']),
   helpers.toLower(null, ['email']),
   (req, res, next) => {
     if(req.user) return res.send({ error: "InvalidCondition" });
@@ -76,7 +76,9 @@ router.post('/initialize',
       else {
         // Initialize
         user.initialized = true;
-        user.schoolName = req.body.school;
+        user.schoolName = req.body.schoolName;
+        user.schoolType = req.body.schoolType;
+        user.graduationYear = req.body.graduationYear;
         user.save((err) => {
           if(err) return next(err);
           else req.login(user._id, (err) => {

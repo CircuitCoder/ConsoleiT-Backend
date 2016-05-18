@@ -22,7 +22,7 @@ router.route('/:id(\\d+)')
           desc: true,
           schoolType: true,
           schoolName: true,
-          yearEnrolled: true,
+          graduationYear: true,
           experiences: true,
         }).lean().exec((err, doc) => {
           if(err) return reject(err);
@@ -61,7 +61,7 @@ router.route('/:id(\\d+)')
   helpers.hasFields(['user']),
   (req, res, next) => {
     var filtered = {};
-    ['realname', 'desc', 'gender', 'phone', 'IDType', 'IDNumber', 'schoolType', 'schoolName', 'yearEnrolled', 'experiences'].forEach(function(e) {
+    ['realname', 'desc', 'gender', 'phone', 'schoolType', 'schoolName', 'graduationYear', 'experiences'].forEach(function(e) {
       if(e in req.body.user && req.body.user[e] != null && req.body.user[e] != undefined) {
         filtered[e] = req.body.user[e];
       }

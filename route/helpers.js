@@ -74,16 +74,14 @@ module.exports.groupOwner = (req, res, next) => {
 module.exports.hasFields = (fields) => {
   return (req, res, next) => {
     if(!req.body) return res.sendStatus(400);
-    Promise.all(fields.map((e) => {
-      return new Promise((resolve, reject) => {
-        if(e in req.body) resolve();
-        else reject();
-      });
-    })).then((results) => {
-      return next();
-    }, (reason) => {
-      return res.sendStatus(400);
-    });
+    for(let i = 0; i < fields.length; ++i) {
+      if(!(fields[i] in req.body)) return res.sendStatus(400);
+      else if(req.body[fields[i]] === undefined) return res.sendStatus(400);
+      else if(req.body[fields[i]] === null) return res.sendStatus(400);
+      else if(req.body[fields[i]] === "") return res.sendStatus(400);
+      console.log(req.body[fields[i]]);
+    }
+    return next();
   }
 }
 
