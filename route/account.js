@@ -76,7 +76,7 @@ router.post('/initialize',
       else {
         // Initialize
         user.initialized = true;
-        user.school = req.body.school;
+        user.schoolName = req.body.school;
         user.save((err) => {
           if(err) return next(err);
           else req.login(user._id, (err) => {
