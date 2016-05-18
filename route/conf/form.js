@@ -23,13 +23,18 @@ function checkFormPerm(conf, form, uid, level) {
         switch(level) {
           case "viewer":
             if(form.viewers.indexOf(uid) != -1) return resolve(true);
+            /* falls through */
+
           case "moderator":
             if(form.moderators.indexOf(uid) != -1) return resolve(true);
+            /* falls through */
+
           case "admin":
             if(form.admins.indexOf(uid) != -1) return resolve(true);
 
             return resolve(false);
             break;
+
           default:
             return reject(new Error("No such permission level"));
         }
@@ -230,7 +235,7 @@ router.route('/:form/submission/:user(\\d+)')
           });
           else return resolve(false);
         }
-      })
+      });
     }).then(result => {
       if(!result) res.sendStatus(403);
       else {
@@ -282,7 +287,7 @@ router.route('/:form/submission/:user/lock')
         if(err) return next(err);
         else if(!doc) res.sendStatus(404);
         else res.send({ msg: "OperationSuccessful" });
-      })
+      });
     }
   });
 })
@@ -300,10 +305,10 @@ router.route('/:form/submission/:user/lock')
         if(err) return next(err);
         else if(!doc) res.sendStatus(404);
         else res.send({ msg: "OperationSuccessful" });
-      })
+      });
     }
   });
-})
+});
 
 router.route('/:form/submission/:user/note')
 .get((req, res, next) => {
@@ -337,9 +342,9 @@ router.route('/:form/submission/:user/note')
         }, {
           $set: { note: req.body.note }
         }).exec((err, doc) => {
-          if(err) return next(err)
+          if(err) return next(err);
           else res.send({ msg: "OperationSuccessful" });
-        })
+        });
       }
     });
   });
@@ -351,7 +356,7 @@ router.route('/:form/submission/:user/note')
 const actionStatusMap = {
   close: 'closed',
   open: 'open',
-}
+};
 
 router.put('/:form/settings/:action(close|open)',
   (req, res, next) => {
@@ -400,7 +405,7 @@ router.delete('/:form',
     }).exec((err, wres) => {
       console.log(wres);
       if(err) return next(err);
-      else if(wres.result.n == 0) return res.sendStatus(404);
+      else if(wres.result.n === 0) return res.sendStatus(404);
       else return res.send({ msg: "OperationSuccessful" });
     });
   });
@@ -428,7 +433,7 @@ router.post('/:form/settings/permissions',
       else if(!doc) return res.sendStatus(404);
       else return res.send({ msg: "OperationSuccessful" });
     });
-  })
+  });
 
 //TODO: finish the following APIs
 // Hooks

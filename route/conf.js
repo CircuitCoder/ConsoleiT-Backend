@@ -78,8 +78,9 @@ router.post('/', helpers.hasFields(['title', 'group']), helpers.groupOwner, (req
         msg: "OperationSuccessful",
         id: id
       });
-    } else newConf(req.body.title, req.body.group, req.user, cb)
-  }; 
+    } else newConf(req.body.title, req.body.group, req.user, cb);
+  } 
+
   newConf(req.body.title, req.body.group, req.user, cb);
 });
 

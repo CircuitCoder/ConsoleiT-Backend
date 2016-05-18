@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-var db = require('../db/schema')
+var db = require('../db/schema');
 var mongoose = require('mongoose');
 
 var fs = require('fs');
@@ -32,35 +32,35 @@ Conf.findById(process.argv[2],"registrants forms").lean().exec((err, doc) => {
     var result = "<meta charset=\"utf-8\"><body style='padding: 0px 40px'>";
 
     sub.forEach(e => {
-      result += "<div style='padding-top: 40px'>"
-      result += `<h1>${e.name}</h1>`
+      result += "<div style='padding-top: 40px'>";
+      result += `<h1>${e.name}</h1>`;
       form.forEach((f, i) => {
-        result += "<div style='height: 16px'></div>"
+        result += "<div style='height: 16px'></div>";
         if(f.type == "title") result += `<h2 style="font-family: HiraginoSansGB, MicrosoftYaHei, sans-serif">${f.title}</h2>`;
         else {
           result += `<h3 style="font-family: 'Hiragino Sans GB', MicrosoftYaHei, sans-serif">${f.title}</h3>`;
           
-          result += "<div style='padding-left: 20px'>"
-          if(!e.sub[i] || e.sub[i] == "") {
-            result += "<i style='opcity: .4'>空</i>"
+          result += "<div style='padding-left: 20px'>";
+          if(!e.sub[i] || e.sub[i] === "") {
+            result += "<i style='opcity: .4'>空</i>";
           } else {
             if(f.type == "checkbox") {
               result += '<ol>';
               Object.keys(e.sub[i]).map(g => e.sub[i][g]).forEach(g => {
-                if(g) result += `<li>${g}</li>`
+                if(g) result += `<li>${g}</li>`;
               });
               result += '</ol>';
             } else {
               var csub = e.sub[i];
-              result += csub.split("\n").map(h => `<p>${h}</p>`).join("")
+              result += csub.split("\n").map(h => `<p>${h}</p>`).join("");
             }
           }
-          result += "</div>"
+          result += "</div>";
         }
       });
-      result += "</div><hr>"
+      result += "</div><hr>";
     });
-    result += '</body>'
+    result += '</body>';
 
     console.log(result);
     process.exit();

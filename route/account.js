@@ -47,7 +47,7 @@ router.post('/login', helpers.hasFields(['email', 'passwd']), helpers.toLower(nu
         return res.send({
           error: "InitializationRequired",
           schoolList: config.app.schools,
-        })
+        });
       } else {
         req.login(user._id, (err) => {
           if(err) {
@@ -89,7 +89,7 @@ router.post('/initialize',
             }
           });
         });
-      };
+      }
     })(req, res, next);
   });
 
@@ -134,7 +134,7 @@ router.get('/restore', (req, res, next) => {
   if(req.user) {
     User.findById(req.user).exec((err, doc) => {
       if(err) return next(err);
-      else res.send({ user: doc.toObject() })
+      else res.send({ user: doc.toObject() });
     });
   } else {
     res.send({ error: "NotLoggedIn" });

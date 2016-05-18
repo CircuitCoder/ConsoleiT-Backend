@@ -20,7 +20,7 @@ module.exports.root = (req, res, next) => {
   if(!req.user) return res.send({ error: "NotLoggedIn" });
   else if(req.user.isRoot) return next();
   else return res.send({ error: "PermissionDenied" });
-}
+};
 
 /** 
  * Middleware for logined-only operation
@@ -28,7 +28,7 @@ module.exports.root = (req, res, next) => {
 module.exports.loggedin = (req, res, next) => {
   if(!req.user) return res.send({ error: "NotLoggedIn" });
   else return next();
-}
+};
 
 /**
  * Generate a middleware to block access from users whose access level is lower than a specified value
@@ -41,7 +41,7 @@ module.exports.AL = (value) => {
     else if(req.user.accessLevel < value) return res.send({ error: "PermissionDenied" });
     else return next();
   };
-}
+};
 
 /**
  * Middleware for group owner
@@ -79,11 +79,10 @@ module.exports.hasFields = (fields) => {
       else if(req.body[fields[i]] === undefined) return res.sendStatus(400);
       else if(req.body[fields[i]] === null) return res.sendStatus(400);
       else if(req.body[fields[i]] === "") return res.sendStatus(400);
-      console.log(req.body[fields[i]]);
     }
     return next();
-  }
-}
+  };
+};
 
 /**
  * Middleware for checking if the current user has a specified set of permission
@@ -118,7 +117,7 @@ module.exports.hasPerms = (perms, except) => {
             for(var i = 0; i <= segs.length; ++i) {
               if(i == segs.length) return resolve();
               else if(permBase.all) return resolve();
-              else if(permBase[segs[i]]) permBase = permBase[seg[i]];
+              else if(permBase[segs[i]]) permBase = permBase[segs[i]];
               else return reject(e);
             }
           };
@@ -129,7 +128,7 @@ module.exports.hasPerms = (perms, except) => {
         });
       });
     }
-  }
+  };
 };
 
 /**
@@ -160,8 +159,8 @@ module.exports.toCamel = (params, fields) => {
     });
 
     next();
-  }
-}
+  };
+};
 
 /**
  * Middleware for converting parameters or fields to lower case
@@ -177,5 +176,5 @@ module.exports.toLower = (params, fields) => {
     });
 
     next();
-  }
-}
+  };
+};
