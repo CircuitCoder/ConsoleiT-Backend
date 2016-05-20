@@ -263,9 +263,8 @@ router.route('/:form/submission/:user(\\d+)')
           } else {
             if(doc.locked && result.role == 'user')
               return res.sendStatus(403);
-            else {
-              doc.submisson = req.body.content;
-            }
+            else 
+              doc.submission = req.body.content;
           }
 
           doc.save((err) => {
