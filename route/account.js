@@ -62,10 +62,13 @@ router.post('/login', helpers.hasFields(['email', 'passwd']), helpers.toLower(nu
 });
 
 router.post('/initialize',
-  helpers.hasFields(['email', 'passwd', 'schoolName', 'schoolType', 'graduationYear']),
+  helpers.hasFields(['email', 'passwd', 'schoolName', 'schoolType']),
   helpers.toLower(null, ['email']),
   (req, res, next) => {
     if(req.user) return res.send({ error: "InvalidCondition" });
+    else if(req.body.schoolType != 4) {
+      if(!req.body.graduationYear || req.body.graduationYear == "") return res.sendStatus(400);
+    }
 
     // Using standard passport authentication here
     // Because this interface will only be called once
