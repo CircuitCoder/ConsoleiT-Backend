@@ -127,6 +127,7 @@ router.get('/:conf(\\d+)', helpers.loggedin, (req, res, next) => {
             viewers: 1,
             name: 1,
             title: 1,
+            status: 1,
           }).exec((err, forms) => {
             if(err) reject(err);
             else resolve(forms);
