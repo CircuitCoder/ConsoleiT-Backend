@@ -51,4 +51,8 @@ var FormSchema = mongoose.Schema({
   keywords: { type: [Number], default: [] },
 });
 
+FormSchema.options.toObject = {
+  versionKey: false
+}
+
 module.exports = FormSchema;

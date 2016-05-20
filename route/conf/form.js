@@ -153,10 +153,10 @@ router.get('/:form/submissions',
         conf: req.params.conf,
         form: req.params.form
       }, {
-        _id: 0,
-        user: 1,
-        status: 1,
-        locked: 1,
+        _id: false,
+        user: true,
+        status: true,
+        locked: true,
       }).lean().exec((err, rdoc) => {
         if(err) return next(err);
         else {
@@ -165,7 +165,7 @@ router.get('/:form/submissions',
           User.find({
             _id: { $in: idList },
           }, {
-            realname: 1
+            realname: true,
           }).exec((err, udoc) => {
             if(err) return next(err);
             else {
@@ -193,17 +193,21 @@ router.route('/:form/submission/:user(\\d+)')
   }).then(result => {
     if(!result) res.sendStatus(403);
     else {
+      let projection = {
+        _id: false,
+        user: true,
+        submission: true,
+        locked: true,
+      };
+
+      //TODO: show status to user after archive
+      if(req.params.user != req.user) projection.status = true;
+
       Registrant.findOne({
         conf: req.params.conf,
         form: req.params.form,
         user: req.params.user
-      }, {
-        _id: false,
-        user: true,
-        status: (req.params.user == req.user ? false : true), //TODO: show status to user after archived
-        submission: true,
-        locked: true,
-      }).lean().exec((err, doc) => {
+      }, projection).lean().exec((err, doc) => {
         if(err) return next(err);
         else if(!doc) return res.send({ submission: {}, locked: false, new: true}); // Indicates that it is not saved
         else return res.send(doc);
@@ -212,7 +216,7 @@ router.route('/:form/submission/:user(\\d+)')
   }).catch(e => next(e));
 })
 .post(
-  helpers.hasFields(['submission']),
+  helpers.hasFields(['content']),
   (req, res, next) => {
     new Promise((resolve, reject) => {
       Form.findOne({
@@ -225,12 +229,10 @@ router.route('/:form/submission/:user(\\d+)')
         else {
           if(form.admins.indexOf(req.user) != -1) return resolve({
             role: 'admin',
-            initStatus: form.submissionStatus[0],
             formOpen: form.status == 'open'
           });
           else if(req.params.user == req.user) return resolve({
             role: 'user',
-            initStatus: form.submissionStatus[0],
             formOpen: form.status == 'open'
           });
           else return resolve(false);
@@ -247,26 +249,29 @@ router.route('/:form/submission/:user(\\d+)')
           if(err) return next(err);
           else if(!doc) {
             if(result.formOpen) {
-              Registrant.insert({
+              doc = new Registrant({
                 conf: req.params.conf,
                 form: req.params.form,
                 user: req.params.user,
-                status: result.initStatus,
                 //TODO: sanitize
-                submission: req.body.submission,
-              }).exec((err, ndoc) => {
-                res.send({ msg: "OperationSuccessful" });
-              });
+                submission: req.body.content,
+              })
             } else {
               //TODO: closed form
+              return res.sendStatus(403);
             }
           } else {
             if(doc.locked && result.role == 'user')
-              res.sendStatus(403);
+              return res.sendStatus(403);
             else {
-              doc.submission = req.body.submission;
+              doc.submisson = req.body.content;
             }
           }
+
+          doc.save((err) => {
+            if(err) return next(err);
+            else return res.send({ msg: "OperationSuccessful" });
+          });
         });
       }
     }).catch(e => next(e));
