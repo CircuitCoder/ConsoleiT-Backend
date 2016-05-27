@@ -145,7 +145,7 @@ router.get('/restore', (req, res, next) => {
 });
 
 router.post('/settings/passwd', helpers.loggedin, helpers.hasFields(['passwd', 'oripasswd']), (req, res, next) => {
-  User.findById(req.user._id).exec((err, doc) => {
+  User.findById(req.user).exec((err, doc) => {
     if(err) return next(err);
     else if(!doc) return res.sendStatus(500);
     else {
