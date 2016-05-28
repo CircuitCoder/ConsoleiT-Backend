@@ -146,18 +146,39 @@ router.route('/:form/content')
  */
 router.get('/:form/submissions',
   (req, res, next) => {
-    checkFormPerm(req.params.conf, req.params.form, req.user, "viewer").then(result => {
-      if(!result) return res.sendStatus(403);
+    Form.findOne({
+      conf: req.params.conf,
+      name: req.params.form,
+    }).exec((err, form) => {
+      if(err) return next(err);
+      else if(!form) return res.sendStatus(404);
+      
+      // Check for permission
 
-      Registrant.find({
-        conf: req.params.conf,
-        form: req.params.form
+      if(form.admins.indexOf(req.user) == -1
+         && form.moderators.indexOf(req.user) == -1
+         && form.viewers.indexOf(req.user) == -1) return res.sendStatus(403);
+
+      let keywords = [];
+
+      let proj = form.content.reduce((prev, e, i) => {
+        if(e.keyword) {
+          keywords.push({ id: i, field: e });
+          prev[`submission.${i}`] = true;
+        }
+
+        return prev;
       }, {
         _id: false,
         user: true,
         status: true,
         locked: true,
-      }).lean().exec((err, rdoc) => {
+      });
+
+      Registrant.find({
+        conf: req.params.conf,
+        form: req.params.form
+      }, proj).lean().exec((err, rdoc) => {
         if(err) return next(err);
         else {
           var idList = rdoc.map(e => e.user);
@@ -166,22 +187,21 @@ router.get('/:form/submissions',
             _id: { $in: idList },
           }, {
             realname: true,
+            schoolName: true,
           }).exec((err, udoc) => {
             if(err) return next(err);
             else {
               var umap = {};
               udoc.forEach(e => {
-                umap[e._id] = e.realname;
+                umap[e._id] = e;
               });
-              rdoc.forEach(e => e.realname = umap[e.user]);
-              return res.send(rdoc);
+              rdoc.forEach(e => e.profile = umap[e.user]);
+              return res.send({ registrants: rdoc, keywords: keywords });
             }
           });
 
         }
       });
-    }).catch(e => {
-      return next(e);
     });
   });
 
