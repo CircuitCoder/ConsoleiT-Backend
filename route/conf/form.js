@@ -354,8 +354,8 @@ router.route('/:form/submission/:user/note')
   });
 })
 .post(
-  helpers.hasFields(['note']),
   (req, res, next) => {
+    if(typeof req.body.note != 'string') return res.sendStatus(400);
     checkFormPerm(req.params.conf, req.params.form, req.user, 'moderator').then(result => {
       if(!result) return res.sendStatus(403);
       else {
