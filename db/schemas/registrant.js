@@ -11,7 +11,7 @@ var RegistrantSchema = mongoose.Schema({
   user: Number,
 
   status: Object, // Key -> Value map
-  submission: Object,
+  submission: {type: Object, default: {}},
   fromGroup: {type: Number, default: -1}, // -1 indicates a individual registrant
 
   locked: {type: Boolean, default: false},

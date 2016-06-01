@@ -181,6 +181,10 @@ router.get('/:form/submissions',
       }, proj).lean().exec((err, rdoc) => {
         if(err) return next(err);
         else {
+          rdoc.forEach((e) => {
+            if(!e.submission) e.submission = {};
+          });
+
           var idList = rdoc.map(e => e.user);
 
           User.find({
