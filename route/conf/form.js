@@ -115,6 +115,8 @@ router.route('/:form')
         content: doc.content,
         status: doc.status,
         title: doc.title,
+        indicators: doc.indicators,
+        meta: doc.meta,
         role,
       });
     }
@@ -123,7 +125,7 @@ router.route('/:form')
 
 router.route('/:form/content')
 .post(
-  helpers.hasFields(['content', 'title']),
+  helpers.hasFields(['content', 'title', 'indicators', 'meta']),
   (req, res, next) => {
     Form.findOneAndUpdate({
       conf: req.params.conf,
@@ -132,6 +134,8 @@ router.route('/:form/content')
       admins: req.user,
     }, {
       content: req.body.content,
+      indicators: req.body.indicators,
+      meta: req.body.meta,
       title: req.body.title,
     }).exec((err, doc) => {
       if(err) return next(err);
@@ -171,6 +175,7 @@ router.get('/:form/submissions',
       }, {
         _id: false,
         user: true,
+        internalStatus: true,
         status: true,
         locked: true,
       });
@@ -220,12 +225,15 @@ router.route('/:form/submission/:user(\\d+)')
       let projection = {
         _id: false,
         user: true,
+        internalStatus: true,
         submission: true,
         locked: true,
       };
 
       //TODO: show status to user after archive
-      if(req.params.user != req.user) projection.status = true;
+      if(req.params.user != req.user) {
+        projection.status = true;
+      }
 
       Registrant.findOne({
         conf: req.params.conf,
@@ -377,6 +385,39 @@ router.route('/:form/submission/:user/note')
     });
   });
 
+/* Group action */
+router.route('/:form/perform/:action')
+.post(
+  helpers.hasFields(['applicants']),
+  (req, res, next) => {
+
+  if(req.params.action === 'payment') {
+    checkFormPerm(req.params.conf, req.params.form, req.user, 'admin').then(result => {
+      // TODO: prevent action on form without payment setup
+      if(!result) return res.sendStatus(403);
+      Registrant.update({
+        conf: req.params.conf,
+        form: req.params.form,
+        user: { $in: req.body.applicants }, // TODO: sanitize
+      }, {
+        $set: {
+          'internalStatus.payment': true,
+        }
+      }, {
+        multi: true
+      }).exec((err, doc) => {
+        if(err) return next(err);
+        else return res.send({
+          msg: 'OperationSuccessful'
+        });
+      });
+    });
+  } else {
+    return res.sendStatus(404);
+  }
+})
+
+
 /**
  * Opening, closeing and archiving
  */
@@ -431,7 +472,6 @@ router.delete('/:form',
       status: 'pending',
       admins: req.user,
     }).exec((err, wres) => {
-      console.log(wres);
       if(err) return next(err);
       else if(wres.result.n === 0) return res.sendStatus(404);
       else return res.send({ msg: "OperationSuccessful" });

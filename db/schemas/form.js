@@ -33,22 +33,32 @@ var FormSchema = mongoose.Schema({
     type: [String],
     default: [],
   },
+
   closedOn: {
     type: [String],
     default: [],
   },
   /* Otherwise archived */
 
-  /* Possible status for submissions */
-  registrantStatus: {
+  /* Possible indicators for submissions */
+  indicators: {
     type: [{
       name: String,
-      type: { type: String, enum: ['Number', 'Boolean', 'String'], }
+      type: { type: String, enum: ['Number', 'Boolean', 'String'] },
     }],
     default: [],
   },
 
   keywords: { type: [Number], default: [] },
+
+  meta: {
+    type: {
+      payment: { type: Boolean, default: false },
+    },
+    default: {
+      payment: false,
+    }
+  },
 });
 
 FormSchema.options.toObject = {
