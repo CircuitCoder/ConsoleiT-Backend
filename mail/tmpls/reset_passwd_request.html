@@ -19,21 +19,9 @@
 }
 
 .header > img {
-  height: 42px;
+  max-height: 42px;
+  min-height: 42px;
   display: inline-block;
-}
-
-.header > .alt {
-  height: 0px;
-  max-height: 0px;
-  min-height: 0px;
-  color: white;
-  font-family: sans-serif;
-  font-size: 42px;
-  line-height: 42px;
-  display: none;
-  text-align: center;
-  opacity: 0;
 }
 
 .body {
@@ -99,18 +87,15 @@
 }
 
 .extra img {
-  height: 56px;
-  opacity: .54;
+  max-height: 56px;
+  min-height: 56px;
   margin-bottom: 12px;
 }
 
-.placeholder {
-  width: 0;
-  overflow: hidden;
-  float: left;
-  display: none;
-  color: rgba(0,0,0,0);
-  opacity: 0;
+.randstr {
+  background: white;
+  opacity: 0.1;
+  font-size: 1px;
 }
 </style>
 <style>
@@ -127,8 +112,7 @@
 </style>
 <div class="container">
   <div class="header">
-    <div class="alt">Console iT</div>
-    <img src="{{{image.base64.console}}}">
+    {{#image}}console{{/image}}
   </div>
   <div class="body">
     <h1>您好，{{data.realname}}</h1>
@@ -149,8 +133,10 @@
 </div>
 
 <div class="extra">
-  <img src="{{{image.base64.bjmun}}}"><br>
+  {{#image}}bjmun{{/image}}<br>
 
   北京市高中生模拟联合国协会<br>
   Beijing Model United Nations Association for High School Students<br>
 </div>
+
+<div class="randstr">{{{randstr}}}</div>

@@ -1,49 +1,72 @@
-var nodemailer = require('nodemailer');
-var config = require('./config');
-var mustache = require('mustache');
-var fs = require('fs');
-var crypto = require('crypto');
-var juice = require('juice');
+const nodemailer = require('nodemailer');
+const config = require('./config');
+const mustache = require('mustache');
+const fs = require('fs');
+const crypto = require('crypto');
+const juice = require('juice');
 
-var transporter = nodemailer.createTransport(config.mailer.transport, config.mailer.defaults);
+const transporter = nodemailer.createTransport(config.mailer.transport, config.mailer.defaults);
 
 function getTemplate(id) {
   return fs.readFileSync(`${__dirname}/mail/tmpls/${config.mailer.tmpls[id].file}`, 'utf8').toString('utf8');
 }
 
 /* Get images */
-var image = {
-  base64: {},
-  raw: {},
-}
+const images = {};
 config.mailer.images.forEach(e => {
-  var file = fs.readFileSync(`${__dirname}/mail/images/${e.file}`);
-  var type;
-  if(e.type) type = e.type;
-  else {
-    var extension = e.file.split('.').pop();
-    switch(extension) {
-      case 'svg': type = 'image/svg+xml'; break;
-      case 'jpg': type = 'image/jpg'; break;
-      case 'png': type = 'image/png'; break;
-      default: type = 'image/' + extension; break;
+  images[e.key] = {
+    filename: e.file,
+    content: fs.readFileSync(`${__dirname}/mail/images/${e.file}`),
+    cid: 'ci.img.' + e.key,
+    file: e.file,
+  }
+});
+
+class ImageGenerator {
+  constructor(store) {
+    this.store = store;
+    this.registered = [];
+  }
+
+  generate(name, classnames = []) {
+    if(!(name in this.store)) {
+      // TODO: logging
+      return '';
+    } else {
+      this.registered.push(name);
+      return `<img class="${classnames.join(' ')}" src="cid:${this.store[name].cid}"></img>`;
     }
   }
-  image.base64[e.key] = 'data:' + type + ';base64,' + file.toString('base64');
-  image.raw[e.key] = file.toString('utf8');
-});
+
+  finish() {
+    return this.registered.map(e => ({
+      filename: this.store[e].filename,
+      content: this.store[e].content,
+      cid: this.store[e].cid,
+    }));
+  }
+}
+
+function imageBind(generator) {
+  return () => (text) => generator.generate(text);
+}
 
 module.exports = function(id, to, data, cb) {
   if(!id in config.mailer.tmpls) return cb("No such template");
   else {
-    var content = juice(mustache.render(getTemplate(id), {data, image}));
+    const randstr = crypto.randomBytes(16).toString('hex');
+    const gen = new ImageGenerator(images);
+    const content = juice(mustache.render(getTemplate(id), { randstr, data, image: imageBind(gen) }));
+
     if(to) // For testing
       transporter.sendMail({
         to: to,
         subject: config.mailer.tmpls[id].title,
-        html: content
+        html: content,
+        attachments: gen.finish(),
       }, cb);
 
     return content;
   }
 }
+
