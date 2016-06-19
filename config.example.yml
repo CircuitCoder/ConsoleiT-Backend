@@ -33,6 +33,9 @@ mailer:
     reset_passwd:
       title: ConsoleiT 新密码
       file: reset_passwd.html
+    payment_confirmation:
+      title: ConsoleiT 缴费确认
+      file: payment_confirmation.html
   images:
     # For images, we will automatically identify the type of the image based on its extension name
     # e.g.: image/svg_xml, image/jpg ...
@@ -43,6 +46,8 @@ mailer:
       file: console.svg
     - key: bjmun
       file: bjmun.svg
+    - key: payment_confirmation
+      file: payment_confirmation.png
 
 # Developer options
 develop:

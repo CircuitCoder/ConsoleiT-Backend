@@ -1,0 +1,153 @@
+<style>
+.container {
+  margin-top: 40px;
+  margin-bottom: 40px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 550px;
+  border-radius: 5px;
+  box-shadow: #CCC 0 4px 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.header {
+  height: 42px;
+  background-color: rgb(33, 150, 243);
+  padding: 42px 0;
+  text-align: center;
+}
+
+.header > img {
+  max-height: 42px;
+  min-height: 42px;
+  display: inline-block;
+}
+
+.body {
+  font-family: MicrosoftYaHei, "Hiragino Sans GB";
+  padding: 40px;
+  border: #DDD 1px solid;
+  border-radius: 0 0 5px 5px;
+}
+
+.body > h1 {
+  margin: 0 0 40px 0;
+  font-size: 36px;
+  line-height: 40px;
+  font-weight: normal;
+}
+
+.body > h2 {
+  margin: 0 0 40px 0;
+  font-size: 24px;
+  line-height: 28px;
+  font-weight: normal;
+}
+
+.body > p {
+  margin: 0 0 40px 0;
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: normal;
+}
+
+.body > pre {
+  margin: 0 0 40px 0;
+  font-size: 14px;
+  line-height: 32px;
+  text-align: center;
+  font-weight: bold;
+  border-radius: 2px;
+  background: #EEE;
+  border: #DDD 1px solid;
+}
+
+.body > .footer {
+  margin-top: 64px;
+  font-size: 14px;
+  line-height: 18px;
+
+  text-align: center;
+  color: #999;
+}
+
+.body > .footer a {
+  text-decoration: none;
+  color: #999;
+}
+
+.extra {
+  font-family: MicrosoftYaHei, "Hiragino Sans GB";
+  text-align: center;
+  margin-top: 40px;
+  color: #AAA;
+  font-size: 14px;
+  line-height: 24px;
+}
+
+.extra img {
+  max-height: 56px;
+  min-height: 56px;
+  margin-bottom: 12px;
+}
+
+.randstr {
+  background: white;
+  opacity: 0.1;
+  font-size: 1px;
+}
+</style>
+<style>
+  .congratz {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .contratz img {
+    max-height: 200px;
+    max-width: 200px;
+    margin: 0 auto;
+  }
+
+  strong {
+    color: rgba(0,0,0,1);
+  }
+
+  p.payment-hint {
+    font-size: 18px;
+    line-height: 32px;
+    text-align: center;
+  }
+</style>
+<div class="container">
+  <div class="header">
+    {{#image}}console{{/image}}
+  </div>
+  <div class="body">
+    <h1>您好，{{data.realname}}</h1>
+    <div class="congratz">
+      {{#image}}payment_confirmation{{/image}}
+    </div>
+    <p class="payment-hint"><strong>{{data.payee}}</strong> 确认收到了您所支付的 <strong>{{data.conf}}</strong> 会费</p>
+
+    <div class="footer">
+      <a href="https://bjmun.org">BJMUN官网</a>
+      &middot;
+      <a href="https://console.bjmun.org">Console iT</a>
+      &middot;
+      <a href="https://bjmun.org/console-it/client">Console iT Client</a>
+      &middot;
+      <a href="https://wiki.bjmun.org">MUNWiki</a>
+    </div>
+  </div>
+</div>
+
+<div class="extra">
+  {{#image}}bjmun{{/image}}<br>
+
+  北京市高中生模拟联合国协会<br>
+  Beijing Model United Nations Association for High School Students<br>
+</div>
+
+<div class="randstr">{{{randstr}}}</div>

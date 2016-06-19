@@ -5,11 +5,13 @@ var router = express.Router({ mergeParams: true });
 
 var mongoose = require('mongoose');
 var Conf = mongoose.model('Conf');
+var Group = mongoose.model('Group');
 var Form = mongoose.model('Form');
 var User = mongoose.model('User');
 var Registrant = mongoose.model('Registrant');
 
 var helpers = require('../helpers');
+var mailer = require('../../mailer');
 
 function checkFormPerm(conf, form, uid, level) {
   return new Promise((resolve, reject) => {
@@ -395,22 +397,46 @@ router.route('/:form/perform/:action')
     checkFormPerm(req.params.conf, req.params.form, req.user, 'admin').then(result => {
       // TODO: prevent action on form without payment setup
       if(!result) return res.sendStatus(403);
-      Registrant.update({
-        conf: req.params.conf,
-        form: req.params.form,
-        user: { $in: req.body.applicants }, // TODO: sanitize
-      }, {
-        $set: {
-          'internalStatus.payment': true,
-        }
-      }, {
-        multi: true
-      }).exec((err, doc) => {
-        if(err) return next(err);
-        else return res.send({
-          msg: 'OperationSuccessful'
+      new Promise((resolve, reject) => {
+        Registrant.find({
+          conf: req.params.conf,
+          form: req.params.form,
+          user: { $in: req.body.applicants }, // TODO: sanitize
+          'internalStatus.payment': { $ne: true },
+        }).exec((err, doc) => {
+          if(err) return reject(err);
+          return resolve(doc);
         });
-      });
+      }).then((applicants) => Promise.all(applicants.map(e => new Promise((resolve, reject) => {
+        // TODO: racing condition?
+        e.internalStatus.payment = true;
+        e.markModified('internalStatus.payment');
+        e.save((err) => {
+          if(err) return reject(err);
+          else return resolve(e.user);
+        });
+      })))).then((applicants) => Promise.all([
+        (resolve, reject) => User.find({ _id: { $in: applicants } }, { realname: 1, email: 1 })
+            .lean().exec((err, doc) => err ? reject(err) : resolve(doc)),
+
+        (resolve, reject) => Conf.findOne({ _id: req.params.conf }, { group: 1, title: 1 }).lean().exec((err, cdoc) => {
+          if(err) return reject(err);
+          else if(!cdoc) return reject(new Error("Conf doesn\'t exist"));
+          else Group.findOne({ _id: cdoc.group }, { title: 1 }).lean().exec((err, gdoc) => err ? reject(err) : resolve({ group: gdoc, conf: cdoc }));
+        }),
+      ].map(e => new Promise(e)))).then(([applicants, { group, conf }]) =>
+        Promise.all(applicants.map(e => new Promise((resolve, reject) => {
+          mailer('payment_confirmation', e.email, {
+            payee: group.title,
+            realname: e.realname,
+            conf: conf.title,
+          }, (err, info) => {
+            if(err) return reject(err);
+            else return resolve();
+          });
+      }))))
+      .then(() => res.send({ msg: 'OperationSuccessful' }))
+      .catch(e => next(e));
     });
   } else {
     return res.sendStatus(404);

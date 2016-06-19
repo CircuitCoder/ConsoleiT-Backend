@@ -58,13 +58,16 @@ module.exports = function(id, to, data, cb) {
     const gen = new ImageGenerator(images);
     const content = juice(mustache.render(getTemplate(id), { randstr, data, image: imageBind(gen) }));
 
-    if(to) // For testing
+    if(to) { // For testing
       transporter.sendMail({
         to: to,
         subject: config.mailer.tmpls[id].title,
         html: content,
         attachments: gen.finish(),
       }, cb);
+    } else {
+      cb();
+    }
 
     return content;
   }
