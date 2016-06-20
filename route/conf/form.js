@@ -237,15 +237,31 @@ router.route('/:form/submission/:user(\\d+)')
         projection.status = true;
       }
 
-      Registrant.findOne({
-        conf: req.params.conf,
-        form: req.params.form,
-        user: req.params.user
-      }, projection).lean().exec((err, doc) => {
-        if(err) return next(err);
-        else if(!doc) return res.send({ submission: {}, locked: false, new: true}); // Indicates that it is not saved
-        else return res.send(doc);
-      });
+      Promise.all([
+        new Promise((resolve, reject) => {
+          Registrant.findOne({
+            conf: req.params.conf,
+            form: req.params.form,
+            user: req.params.user
+          }, projection).lean().exec((err, doc) => {
+            if(err) return reject(err);
+            else if(!doc) return resolve({ submission: {}, locked: false, new: true }); // Indicates that it is not saved
+            else return resolve(doc);
+          });
+        }),
+        new Promise((resolve, reject) => {
+          User.findById(req.params.user, { avatar: 1, email: 1, realname: 1 }).lean().exec((err, doc) => {
+            if(err) return reject(err);
+            else return resolve(doc);
+          });
+        })
+      ]).then(([reg, usr]) => {
+        if(!usr) return res.sendStatus(404);
+        else return res.send({
+          application: reg,
+          applicant: usr,
+        });
+      })
     }
   }).catch(e => next(e));
 })
