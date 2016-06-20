@@ -275,36 +275,40 @@ router.route('/:form/submission/:user(\\d+)')
     }).then(result => {
       if(!result) res.sendStatus(403);
       else {
-        Registrant.findOne({
+        const canUpsert = result.formOpen;
+        const restr = {
           conf: req.params.conf,
           form: req.params.form,
           user: req.params.user
+        }
+
+        Registrant.findOneAndUpdate({
+          conf: req.params.conf,
+          form: req.params.form,
+          user: req.params.user
+        }, {
+          $set: {
+            submission: req.body.content,
+          }
+        }, {
+          upsert: canUpsert,
         }).exec((err, doc) => {
           if(err) return next(err);
-          else if(!doc) {
-            if(result.formOpen) {
-              doc = new Registrant({
-                conf: req.params.conf,
-                form: req.params.form,
-                user: req.params.user,
-                //TODO: sanitize
-                submission: req.body.content,
-              })
-            } else {
-              //TODO: closed form
-              return res.sendStatus(403);
-            }
+          else if(!doc && !canUpsert) {
+            return res.sendStatus(403);
           } else {
-            if(doc.locked && result.role == 'user')
-              return res.sendStatus(403);
-            else 
-              doc.submission = req.body.content;
-          }
+            if(!doc && canUpsert) {
+              return res.send({ msg: "OperationSuccessful" });
+            } else if(doc.locked && result.role == 'user') {
+              // Rollback
 
-          doc.save((err) => {
-            if(err) return next(err);
+              Registrant.update({ _id :doc._id}, { $set: { submission: doc.submission } }).exec((err, doc) => {
+                if(err) return next(err);
+                else return res.sendStatus(403);
+              });
+            }
             else return res.send({ msg: "OperationSuccessful" });
-          });
+          }
         });
       }
     }).catch(e => next(e));
