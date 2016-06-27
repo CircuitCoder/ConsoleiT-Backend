@@ -177,9 +177,9 @@ router.get('/:form/submissions',
       }, {
         _id: false,
         user: true,
-        internalStatus: true,
         status: true,
         locked: true,
+        payment: true,
       });
 
       Registrant.find({
@@ -227,9 +227,9 @@ router.route('/:form/submission/:user(\\d+)')
       let projection = {
         _id: false,
         user: true,
-        internalStatus: true,
         submission: true,
         locked: true,
+        payment: true,
       };
 
       //TODO: show status to user after archive
@@ -422,15 +422,14 @@ router.route('/:form/perform/:action')
           conf: req.params.conf,
           form: req.params.form,
           user: { $in: req.body.applicants }, // TODO: sanitize
-          'internalStatus.payment': { $ne: true },
+          payment: { $ne: true },
         }).exec((err, doc) => {
           if(err) return reject(err);
           return resolve(doc);
         });
       }).then((applicants) => Promise.all(applicants.map(e => new Promise((resolve, reject) => {
         // TODO: racing condition?
-        e.internalStatus.payment = true;
-        e.markModified('internalStatus.payment');
+        e.payment = true;
         e.save((err) => {
           if(err) return reject(err);
           else return resolve(e.user);

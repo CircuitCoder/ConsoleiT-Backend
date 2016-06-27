@@ -10,16 +10,11 @@ var RegistrantSchema = mongoose.Schema({
 
   user: Number,
 
-  internalStatus: {
-    type: {
-      payment: { type: Boolean, default: false },
-    },
-  },
-
   status: Object, // Key -> Value map
   submission: {type: Object, default: {}},
   fromGroup: {type: Number, default: -1}, // -1 indicates a individual registrant
 
+  payment: { type: Boolean, default: false },
   locked: {type: Boolean, default: false},
   note: {type: String, default: ""},
 });
