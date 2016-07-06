@@ -330,44 +330,6 @@ router.route('/:form/submission/:user(\\d+)')
     }).catch(e => next(e));
   });
 
-router.route('/:form/submission/:user/lock')
-.put((req, res, next) => {
-  checkFormPerm(req.params.conf, req.params.form, req.user, 'moderator').then(result => {
-    if(!result) return res.sendStatus(403);
-    else {
-      Registrant.findOneAndUpdate({
-        conf: req.params.conf,
-        form: req.params.form,
-        user: req.params.user,
-      }, {
-        $set: { locked: true }
-      }).exec((err, doc) => {
-        if(err) return next(err);
-        else if(!doc) res.sendStatus(404);
-        else res.send({ msg: "OperationSuccessful" });
-      });
-    }
-  });
-})
-.delete((req, res, next) => {
-  checkFormPerm(req.params.conf, req.params.form, req.user, 'moderator').then(result => {
-    if(!result) return res.sendStatus(403);
-    else {
-      Registrant.findOneAndUpdate({
-        conf: req.params.conf,
-        form: req.params.form,
-        user: req.params.user,
-      }, {
-        $set: { locked: false }
-      }).exec((err, doc) => {
-        if(err) return next(err);
-        else if(!doc) res.sendStatus(404);
-        else res.send({ msg: "OperationSuccessful" });
-      });
-    }
-  });
-});
-
 router.route('/:form/submission/:user/note')
 .get((req, res, next) => {
   checkFormPerm(req.params.conf, req.params.form, req.user, 'moderator').then(result => {
@@ -456,6 +418,24 @@ router.route('/:form/perform/:action')
       }))))
       .then(() => res.send({ msg: 'OperationSuccessful' }))
       .catch(e => next(e));
+    });
+  } else if(req.params.action === 'lock'
+            || req.params.action === 'unlock') {
+    checkFormPerm(req.params.conf, req.params.form, req.user, 'moderator').then(result => {
+      // TODO: prevent action on form without payment setup
+      if(!result) return res.sendStatus(403);
+
+      Registrant.update({
+        conf: req.params.conf,
+        form: req.params.form,
+        user: { $in: req.body.applicants },
+      }, {
+        $set: { locked: req.params.action === 'lock' }
+      }).exec((err, doc) => {
+        if(err) return next(err);
+        else if(!doc) res.sendStatus(404);
+        else res.send({ msg: "OperationSuccessful" });
+      });
     });
   } else {
     return res.sendStatus(404);
