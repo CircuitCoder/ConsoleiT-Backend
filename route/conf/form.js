@@ -431,6 +431,8 @@ router.route('/:form/perform/:action')
         user: { $in: req.body.applicants },
       }, {
         $set: { locked: req.params.action === 'lock' }
+      }, {
+        multi: true,
       }).exec((err, doc) => {
         if(err) return next(err);
         else if(!doc) res.sendStatus(404);
