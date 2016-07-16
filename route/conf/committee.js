@@ -32,7 +32,7 @@ function checkCommPerm(conf, comm, uid) {
       if(err) return next(err);
       else if(!doc) return reject('NotFound');
       else if(doc.admins.indexOf(uid) === -1
-              && doc.admins.indexOf(uid) === -1) return reject('PermissionDenied');
+              && doc.daises.indexOf(uid) === -1) return reject('PermissionDenied');
       else resolve();
     });
   });
@@ -159,72 +159,78 @@ router.get('/:comm', (req, res, next) => {
  */
 
 router.get('/:comm/participants', (req, res, next) => {
-  checkCommPerm(req.params.conf, req.params.comm, req.user).then(() => {
-    Participant.find({
-      /*
-      conf: req.params.conf,
-      committee: req.params.comm,
-     */
-      conf: '1',
-      committee: 'meow',
-    }).lean().exec((err, parts) => {
+  Participant.find({
+    /*
+    conf: req.params.conf,
+    committee: req.params.comm,
+   */
+    conf: '1',
+    committee: 'meow',
+  }).lean().exec((err, parts) => {
+    if(err) return next(err);
+    else User.find({ _id: { $in: parts.map(part => part.user) }}, {
+      _id: true,
+      realname: true,
+      schoolName: true,
+      email: true,
+    }).lean().exec((err, users) => {
       if(err) return next(err);
-      else User.find({ _id: { $in: parts.map(part => part.user) }}, {
-        _id: true,
-        realname: true,
-        schoolName: true,
-        email: true,
-      }).lean().exec((err, users) => {
-        if(err) return next(err);
-        else {
-          const map = new Map();
-          for(let u of users)
-            map.set(u._id, u);
-          for(let p of parts)
-            p.profile = map.get(p.user);
+      else {
+        const map = new Map();
+        for(let u of users)
+          map.set(u._id, u);
+        for(let p of parts)
+          p.profile = map.get(p.user);
 
-          return res.send(parts);
-        }
-      });
+        return res.send(parts);
+      }
     });
-  }).catch(e => {
-    if(e === 'NotFound') return res.sendStatus(404);
-    else if(e === 'PermissionDenied') return res.sendStatus(403);
-    else return res.sendStatus(500);
   });
 });
 
 router.post('/:comm/participants',
-  helpers.hasPerms(['committee.manipulate']),
   helpers.hasFields(['participants']),
   (req, res, next) => {
-    const bulk = Participant.collection.initializeUnorderedBulkOp();
+    // TODO: only let conference admins to update committee
+    checkCommPerm(req.params.conf, req.params.comm, req.user).then(() => {
+      const bulk = Participant.collection.initializeUnorderedBulkOp();
 
-    req.body.participants.forEach(e => {
-      bulk.find({
-        conf: parseInt(req.params.conf),
-        committee: req.params.comm,
-
-        user: e.user,
-      }).upsert().updateOne({
-        $set: {
-          group: e.group,
-        }
+      req.body.participants.forEach(e => {
+        bulk.find({
+          conf: parseInt(req.params.conf),
+          user: e.user,
+        }).upsert().updateOne({
+          $set: {
+            group: e.group,
+            committee: req.params.comm,
+          }
+        });
       });
-    });
 
-    bulk.execute(binaryRepl(res));
+      bulk.execute(binaryRepl(res));
+
+    }).catch(e => {
+      if(e === 'NotFound') return res.sendStatus(404);
+      else if(e === 'PermissionDenied') return res.sendStatus(403);
+      else return res.sendStatus(500);
+    });
   });
 
 router.post('/:comm/seats',
   helpers.hasFields(['seats']),
   (req, res, next) => {
-    Committee.update({
-      conf: req.params.conf,
-      name: req.params.comm,
-    }, {
-      $set: { seats: req.body.seats }
-    }).exec(binaryRepl(res));
+    checkCommPerm(req.params.conf, req.params.comm, req.user).then(() => {
+      Committee.update({
+        conf: req.params.conf,
+        name: req.params.comm,
+      }, {
+        $set: { seats: req.body.seats }
+      }).exec(binaryRepl(res));
+    }).catch(e => {
+      if(e === 'NotFound') return res.sendStatus(404);
+      else if(e === 'PermissionDenied') return res.sendStatus(403);
+      else return res.sendStatus(500);
+    });
   });
 
 module.exports = router;
