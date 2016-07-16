@@ -10,10 +10,13 @@ var Group = mongoose.model('Group');
 var Registrant = mongoose.model('Registrant');
 var User = mongoose.model('User');
 var Form = mongoose.model('Form');
+var Committee = mongoose.model('Committee');
+var Participant = mongoose.model('Participant');
 
 var helpers = require('./helpers');
 
 var form = require('./conf/form');
+var committee = require('./conf/committee');
 
 function newConf(title, group, uid, cb) {
   Counter.getNext("conf", function(err, id) {
@@ -101,56 +104,83 @@ router.get('/:conf(\\d+)', helpers.loggedin, (req, res, next) => {
     if(err) return next(err);
     else {
       Promise.all([
-        new Promise((resolve, reject) => {
+        new Promise((resolve, reject) => { // Members
           if(!conf.members) resolve([]);
           else User.find({ _id: { $in: conf.members.map((e) => e._id) }}).select("realname email").lean().exec((err, users) => {
             if(err) reject(err);
             else resolve(users);
           });
-        }), new Promise((resolve, reject) => {
+        }), new Promise((resolve, reject) => { // Group
           Group.findById(conf.group).select("title").lean().exec((err, group) => {
             if(err) reject(err);
             else resolve(group);
           });
-        }), new Promise((resolve, reject) => {
+        }), new Promise((resolve, reject) => { // Filled forms
           Registrant.distinct("form", { conf: req.params.conf, user: req.user }).exec((err, forms) => {
             if(err) reject(err);
             else resolve(forms);
           });
-        }), new Promise((resolve, reject) => {
+        }), new Promise((resolve, reject) => { // All forms
           Form.find({
             conf: req.params.conf,
             status: { $ne: 'archived' },
           }, {
-            admins: 1,
-            moderators: 1,
-            viewers: 1,
-            name: 1,
-            title: 1,
-            status: 1,
-          }).exec((err, forms) => {
+            admins: true,
+            moderators: true,
+            viewers: true,
+            name: true,
+            title: true,
+            status: true,
+          }).lean().exec((err, forms) => {
             if(err) reject(err);
             else resolve(forms);
           });
-        })
-      ]).then((results) => {
+        }), new Promise((resolve, reject) => { // Participated committees
+          Participant.distinct('name', {
+            conf: req.params.conf,
+            user: req.user,
+          }).exec((err, comms) => {
+            if(err) reject(err);
+            else resolve(comms);
+          });
+        }), new Promise((resolve, reject) => { // Committees
+          Committee.find({ conf: req.params.conf }, {
+            _id: false,
+            name: true,
+            title: true,
+            daises: true,
+            admins: true,
+          }).lean().exec((err, comms) => {
+            if(err) reject(err);
+            else resolve(comms);
+          });
+        }),
+      ]).then(([members, group, filledForms, allForms, partCommittees, allCommittees]) => {
         //TODO: optimize
-        var forms = [];
-        results[3].forEach(e => {
-          var role = null;
-          if(e.admins.indexOf(req.user) != -1) role = 'admin';
-          else if(e.moderators.indexOf(req.user) != -1) role = 'moderator';
-          else if(e.viewers.indexOf(req.user) != -1) role = 'viewer';
-          else if(results[2].indexOf(e) != -1) role = 'applicant';
+        const forms = [];
+        const committees = [];
+
+        allForms.forEach(e => {
+          let role = null;
+          if(e.admins.indexOf(req.user) !== -1) role = 'admin';
+          else if(e.moderators.indexOf(req.user) !== -1) role = 'moderator';
+          else if(e.viewers.indexOf(req.user) !== -1) role = 'viewer';
+          else if(filledForms.indexOf(e.name) !== -1) role = 'applicant';
 
           if(role || e.status == "open") forms.push({ name: e.name, title: e.title, role });
         });
 
+        allCommittees.forEach(e => {
+          let role = null;
+          if(e.admins.indexOf(req.user) !== -1) role = 'admin';
+          else if(e.daises.indexOf(req.user) !== -1) role = 'dais';
+          else if(partCommittees.indexOf(e.name) !== -1) role = 'participant';
+
+          if(role) committees.push({ name: e.name, title: e.title, role });
+        });
+
         return res.send({
-          conf: conf,
-          members: results[0],
-          group: results[1],
-          forms: forms
+          conf, members, group, forms, committees,
         });
       }, (reason) => {
         return next(reason);
@@ -226,5 +256,12 @@ router.delete('/:conf(\\d+)/members/:member(\\d+)',
  */
 
 router.use('/:conf(\\d+)/form', helpers.loggedin, form);
+
+/**
+ * Committees and participants
+ * Using sub-router
+ */
+
+router.use('/:conf(\\d+)/committee', helpers.loggedin, committee);
 
 module.exports = router;

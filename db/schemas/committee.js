@@ -7,12 +7,16 @@ var CommitteeSchema = mongoose.Schema({
   conf: Number,
   name: String,
   title: String,
-  dias: { type: [Number], default: [] },
+  daises: { type: [Number], default: [] },
+  admins: { type: [Number], default: [] },
+  desc: { type: String, default: "" },
 
   seats: {
     type: [{
+      id: String,
       title: String,
       count: Number,
+      group: String,
     }],
     default: [],
   }

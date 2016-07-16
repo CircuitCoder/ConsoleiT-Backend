@@ -95,7 +95,7 @@ module.exports.hasPerms = (perms, except) => {
     if(except && except(req)) return next();
     else if(!req.user) return res.send({ error: "NotLoggedIn" });
     else {
-      var conf = getParam(req, "conf");
+      const conf = getParam(req, "conf");
       Conf.findById(conf, {
         roles: true,
         members: { $elemMatch: { _id: req.user } },
@@ -104,28 +104,28 @@ module.exports.hasPerms = (perms, except) => {
         else if(!doc) return res.sendStatus(400);
         else if(!doc.members) return res.send({ error: "PermissionDenied" });
 
-        var roleId = doc.members[0].role;
-        var role = doc.roles.filter( e => e._id == roleId )[0];
+        const roleId = doc.members[0].role;
+        const role = doc.roles.filter( e => e._id == roleId )[0];
 
-        Promise.all(perms.map((_e) => {
-          return (resolve, reject) => {
-            let e = _e;
-            if(typeof _e === "function") e = _e(req);
+        let reason;
 
-            var permBase = role.perm;
-            var segs = e.split('.');
-            for(var i = 0; i <= segs.length; ++i) {
-              if(i == segs.length) return resolve();
-              else if(permBase.all) return resolve();
-              else if(permBase[segs[i]]) permBase = permBase[segs[i]];
-              else return reject(e);
+        if(perms.every(_e => {
+          let e = _e;
+          if(typeof _e === "function") e = _e(req);
+
+          const permBase = role.perm;
+          const segs = e.split('.');
+          for(let i = 0; i <= segs.length; ++i) {
+            if(i == segs.length) return true;
+            else if(permBase.all) return true;
+            else if(permBase[segs[i]]) permBase = permBase[segs[i]];
+            else {
+              reason = e;
+              return false;
             }
-          };
-        })).then((results) => {
-          return next();
-        }, (reason) => {
-          return res.sendStatus({ error: "PermissionDenied", perm: reason });
-        });
+          }
+        })) return next();
+        else return res.sendStatus({ error: "PermissionDenied", perm: reason });
       });
     }
   };

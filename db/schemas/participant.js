@@ -6,8 +6,9 @@ var mongoose = require('mongoose');
 var ParticipantSchema = mongoose.Schema({
   conf: Number,
   committee: String,
+  user: Number,
 
-  seat: String,
+  group: String,
   status: Object, // Key -> Value map
 });
 
