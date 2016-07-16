@@ -160,12 +160,8 @@ router.get('/:comm', (req, res, next) => {
 
 router.get('/:comm/participants', (req, res, next) => {
   Participant.find({
-    /*
     conf: req.params.conf,
     committee: req.params.comm,
-   */
-    conf: '1',
-    committee: 'meow',
   }).lean().exec((err, parts) => {
     if(err) return next(err);
     else User.find({ _id: { $in: parts.map(part => part.user) }}, {
